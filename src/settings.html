@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Specifies the document type as HTML5 and sets the language to English -->
+    <meta charset="UTF-8">
+    <!-- Sets the character encoding to UTF-8 for broad language support -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Ensures the page is responsive and scales well on all devices -->
+    <title>Settings - Study Timer</title>
+    <!-- Sets the title of the Settings page -->
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Links to the custom stylesheet for styling the page -->
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <!-- Navigation bar with links to different sections of the website -->
+                <li><a href="index.html">Timer</a></li>
+                <!-- Link to the Timer page -->
+                <li><a href="stats.html">Stats</a></li>
+                <!-- Link to the Stats page -->
+                <li><a href="settings.html" class="active">Settings</a></li>
+                <!-- Highlights the Settings tab as active -->
+            </ul>
+        </nav>
+    </header>
+    <div class="main-content">
+        <!-- Main container for the settings content -->
+        <h1>Settings</h1>
+        <!-- Title for the Settings section -->
+        <form id="settings-form">
+            <!-- Form to adjust timer settings -->
+            <label for="work-duration">Work Duration (minutes):</label>
+            <!-- Label for the work duration input field -->
+            <input type="number" id="work-duration" name="work-duration" min="1" max="60" value="25"><br>
+            <!-- Input field for setting the work session duration -->
+
+            <label for="short-break">Short Break (minutes):</label>
+            <!-- Label for the short break input field -->
+            <input type="number" id="short-break" name="short-break" min="1" max="30" value="5"><br>
+            <!-- Input field for setting the short break duration -->
+
+            <label for="long-break">Long Break (minutes):</label>
+            <!-- Label for the long break input field -->
+            <input type="number" id="long-break" name="long-break" min="1" max="60" value="15"><br>
+            <!-- Input field for setting the long break duration -->
+
+            <label for="sessions">Number of Sessions before Long Break:</label>
+            <!-- Label for the number of sessions input field -->
+            <input type="number" id="sessions" name="sessions" min="1" max="10" value="4"><br>
+            <!-- Input field for setting the number of work sessions before a long break -->
+
+            <label for="auto-start">Auto-Start Next Session:</label>
+            <!-- Label for the auto-start checkbox -->
+            <input type="checkbox" id="auto-start" name="auto-start"><br>
+            <!-- Checkbox to toggle automatic starting of the next session -->
+
+            <button type="submit">Save Settings</button>
+            <!-- Button to save the user-defined settings -->
+        </form>
+    </div>
+    <script src="js/settings.js"></script>
+    <!-- Links to the JavaScript file that handles settings functionality -->
+</body>
+</html>

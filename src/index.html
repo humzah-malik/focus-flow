@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Specifies the document type as HTML5 and sets the language to English -->
+    <meta charset="UTF-8">
+    <!-- Sets the character encoding to UTF-8 for broad language support -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Ensures the page is responsive and scales well on all devices -->
+    <title>Study Timer</title>
+    <!-- Sets the title of the webpage -->
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Links to the custom stylesheet for styling the page -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Includes Font Awesome for icons used in buttons -->
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <!-- Navigation bar with links to different sections of the website -->
+                <li><a href="index.html" class="active">Timer</a></li>
+                <!-- Highlights the Timer tab as active -->
+                <li><a href="stats.html">Stats</a></li>
+                <!-- Link to the Stats page -->
+                <li><a href="settings.html">Settings</a></li>
+                <!-- Link to the Settings page -->
+            </ul>
+        </nav>
+    </header>
+    <div class="main-content">
+        <!-- Main container for the timer content -->
+        <div class="timer-container">
+            <h1 id="timer-title">Timer</h1>
+            <!-- Title of the timer section -->
+            <div id="timer-display">00:25:00</div>
+            <!-- Display area for the timer countdown -->
+            <div class="button-container">
+                <!-- Container for the timer control buttons -->
+                <button id="reset-btn"><i class="fas fa-redo"></i></button>
+                <!-- Button to reset the timer with a Font Awesome redo icon -->
+                <button id="start-pause-btn"><i class="fas fa-play"></i></button>
+                <!-- Button to start or pause the timer with a play icon -->
+                <button id="skip-btn"><i class="fas fa-forward"></i></button>
+                <!-- Button to skip the current session with a forward icon -->
+            </div>
+        </div>
+        <div class="session-info" id="session-info"></div>
+        <!-- Area to display additional session-related information -->
+    </div>    
+    <script src="js/timer.js"></script>
+    <!-- Links to the JavaScript file that handles timer functionality -->
+</body>
+</html>

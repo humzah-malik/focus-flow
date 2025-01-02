@@ -1,0 +1,137 @@
+/* Base styling for the body element */
+body {
+    font-family: 'Arial', sans-serif; /* Use Arial or fallback to a sans-serif font */
+    margin: 0; /* Remove default margin */
+    padding: 0; /* Remove default padding */
+    background-color: #fff; /* Set background color to white */
+    display: flex; /* Enable a flex container for layout */
+}
+
+/* Styling for the sidebar */
+.sidebar {
+    height: 100vh; /* Full height to cover the entire viewport */
+    width: 250px; /* Fixed width of 250px */
+    position: fixed; /* Stay fixed on scroll */
+    z-index: 1; /* Ensure the sidebar stays on top */
+    top: 0; /* Align to the top */
+    left: 0; /* Align to the left */
+    background-color: #111; /* Black background */
+    color: white; /* White text */
+    overflow-x: hidden; /* Disable horizontal scrolling */
+    padding-top: 20px; /* Add padding at the top */
+}
+
+/* Styling for the list in the sidebar */
+.sidebar ul {
+    list-style-type: none; /* Remove default bullet points */
+    padding: 0; /* Remove padding */
+}
+
+/* Styling for links in the sidebar */
+.sidebar ul li a {
+    padding: 10px 15px; /* Add padding inside links */
+    text-decoration: none; /* Remove underline */
+    font-size: 25px; /* Large font size */
+    color: white; /* White text */
+    display: block; /* Make the links block-level elements */
+}
+
+/* Change link color on hover */
+.sidebar ul li a:hover {
+    color: #f1f1f1; /* Lighter color on hover */
+}
+
+/* Styling for the main content area */
+.main-content {
+    width: 50%; /* Set content width to half the viewport */
+    max-width: 960px; /* Maximum width for larger screens */
+    margin: 100px auto 0; /* Center horizontally and add top margin */
+    padding: 20px; /* Add padding inside the content area */
+    box-sizing: border-box; /* Include padding and borders in width calculations */
+    text-align: center; /* Center-align the text */
+}
+
+/* Timer container styling */
+.timer-container {
+    text-align: center; /* Center the content inside the timer container */
+    padding: 20px; /* Add padding */
+    background-color: #fff; /* White background */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Subtle shadow effect */
+}
+
+/* Styling for the timer display */
+#timer-display {
+    font-size: 48px; /* Large font size for visibility */
+    margin: 20px 0; /* Add vertical spacing */
+}
+
+/* Styling for buttons inside the button container */
+.button-container button {
+    border: none; /* Remove default border */
+    background: none; /* Transparent background */
+    font-size: 24px; /* Set font size */
+    padding: 10px; /* Add padding */
+    cursor: pointer; /* Change cursor to pointer on hover */
+}
+
+/* Change button color on hover */
+.button-container button:hover {
+    color: #007BFF; /* Change color to blue on hover */
+}
+
+/* Media query for smaller screens (height less than 450px) */
+@media screen and (max-height: 450px) {
+    .sidebar {
+        padding-top: 15px; /* Reduce padding for smaller screens */
+    }
+    .sidebar a {
+        font-size: 18px; /* Reduce font size for smaller screens */
+    }
+}
+
+/* Navigation bar styling */
+nav ul {
+    list-style-type: none; /* Remove default bullet points */
+    margin: 0; /* Remove margin */
+    padding: 0; /* Remove padding */
+    overflow: hidden; /* Ensure content doesn't overflow */
+    background-color: #333; /* Dark background color */
+    width: 100%; /* Full width */
+    position: fixed; /* Fixed at the top of the viewport */
+    top: 0; /* Align to the top */
+    display: flex; /* Flex container for nav items */
+    justify-content: center; /* Center the nav items horizontally */
+}
+
+/* Styling for list items in the navigation bar */
+nav ul li {
+    float: left; /* Align items to the left */
+}
+
+/* Styling for links in the navigation bar */
+nav ul li a {
+    display: block; /* Block-level elements */
+    color: white; /* White text */
+    text-align: center; /* Center-align text */
+    padding: 14px 16px; /* Add padding */
+    text-decoration: none; /* Remove underline */
+}
+
+/* Change link styling on hover */
+nav ul li a:hover {
+    background-color: #ddd; /* Light gray background */
+    color: black; /* Black text */
+}
+
+/* Highlight the active page in the navigation bar */
+nav ul li a.active {
+    background-color: #4CAF50; /* Green background */
+    color: white; /* White text */
+}
+
+/* Ensure main content is not hidden under the fixed navbar */
+.main-content {
+    padding-top: 100px; /* Add top padding for navbar space */
+    text-align: center; /* Center-align the text */
+}
