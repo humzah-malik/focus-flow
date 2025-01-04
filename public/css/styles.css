@@ -7,20 +7,6 @@ body {
     display: flex; /* Enable a flex container for layout */
 }
 
-/* Styling for the sidebar */
-.sidebar {
-    height: 100vh; /* Full height to cover the entire viewport */
-    width: 250px; /* Fixed width of 250px */
-    position: fixed; /* Stay fixed on scroll */
-    z-index: 1; /* Ensure the sidebar stays on top */
-    top: 0; /* Align to the top */
-    left: 0; /* Align to the left */
-    background-color: #111; /* Black background */
-    color: white; /* White text */
-    overflow-x: hidden; /* Disable horizontal scrolling */
-    padding-top: 20px; /* Add padding at the top */
-}
-
 /* Styling for the list in the sidebar */
 .sidebar ul {
     list-style-type: none; /* Remove default bullet points */
@@ -135,3 +121,18 @@ nav ul li a.active {
     padding-top: 100px; /* Add top padding for navbar space */
     text-align: center; /* Center-align the text */
 }
+
+/* Styling for the session info */
+.session-info {
+    margin-top: 20px; /* Add space between the buttons and session info */
+    font-size: 16px; /* Adjust font size */
+    font-weight: bold; /* Make the text bold */
+    color: #333; /* Add a dark gray color */
+    text-align: center; /* Center-align the text */
+    padding: 10px 15px; /* Add padding inside the session info area */
+    background-color: #f9f9f9; /* Optional: Light gray background */
+    border-radius: 6px; /* Rounded corners for the session info box */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow */
+    display: inline-block; /* Ensure it wraps tightly around the text */
+}
+

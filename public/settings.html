@@ -31,9 +31,13 @@
         <!-- Title for the Settings section -->
         <form id="settings-form">
             <!-- Form to adjust timer settings -->
-            <label for="work-duration">Work Duration (minutes):</label>
-            <!-- Label for the work duration input field -->
-            <input type="number" id="work-duration" name="work-duration" min="1" max="60" value="25"><br>
+            <label for="work-duration-slider">Work Duration (minutes):</label>
+<div>
+    <input type="range" id="work-duration-slider" name="work-duration-slider" min="5" max="60" value="25" step="1">
+    <span id="work-duration-value">25</span> min
+</div>
+<br>
+
             <!-- Input field for setting the work session duration -->
 
             <label for="short-break">Short Break (minutes):</label>

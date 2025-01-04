@@ -151,7 +151,15 @@ function updateDisplay() {
 
     // Update session info
     const sessionInfo = document.getElementById('session-info');
-    sessionInfo.textContent = `${currentSession === 'Timer' ? sessionCount : sessionCount - 1} of ${sessionsBeforeLongBreak} Sessions`;
+
+    // Correct logic for displaying session count
+    if (currentSession === 'Timer') {
+        sessionInfo.textContent = `${sessionCount} of ${sessionsBeforeLongBreak} Sessions`;
+    } else if (currentSession === 'Short Break') {
+        sessionInfo.textContent = `${sessionCount - 1} of ${sessionsBeforeLongBreak} Sessions`;
+    } else if (currentSession === 'Long Break') {
+        sessionInfo.textContent = `${sessionsBeforeLongBreak} of ${sessionsBeforeLongBreak} Sessions`;
+    }
 }
 
 // Update the start/pause button icon based on the timer's running state
