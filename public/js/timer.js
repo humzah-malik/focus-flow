@@ -6,6 +6,8 @@ let isRunning = false; // Boolean to track whether the timer is running
 let currentSession = 'Timer'; // Tracks the current session type: 'Timer', 'Short Break', or 'Long Break'
 let sessionCount = 1; // Tracks the number of completed work sessions
 let sessionsBeforeLongBreak = 4; // Default number of work sessions before a long break
+let tasks = [];
+let activeTaskIndex = null;
 
 // Load settings and attach event listeners
 document.addEventListener('DOMContentLoaded', function () {
@@ -21,6 +23,10 @@ function attachEventListeners() {
     document.getElementById('reset-btn').addEventListener('click', resetTimer);
     // Event listener for skip button
     document.getElementById('skip-btn').addEventListener('click', skipToBreak);
+
+    document.getElementById('add-task-btn').addEventListener('click', addTask);
+    document.getElementById('task-list').addEventListener('click', handleTaskClick);
+
 }
 
 // Toggle timer between running and paused states
@@ -34,39 +40,52 @@ function toggleTimer() {
 
 // Start or continue the timer
 function startTimer() {
-    if (timerInterval) return; // Prevent multiple intervals
-    isRunning = true; // Set running state to true
+    if (timerInterval) return;
+    isRunning = true;
     timerInterval = setInterval(() => {
-        currentTime--; // Decrement the timer by 1 second
+        currentTime--;
         if (currentTime <= 0) {
-            currentTime = 0; // Ensure it doesn't go negative
-            clearInterval(timerInterval); // Clear the timer interval
-            timerInterval = null; // Reset interval reference
-            isRunning = false; // Set running state to false
-            handleSessionCompletion(); // Handle what happens when session ends
+            currentTime = 0;
+            clearInterval(timerInterval);
+            timerInterval = null;
+            isRunning = false;
+            handleSessionCompletion();
         }
-        updateDisplay(); // Update the timer display
-    }, 1000); // Run the interval every second
-    updateButtonIcon(); // Update the button icon to reflect state
+        updateDisplay();
+    }, 1000);
+    updateButtonIcon();
+
+    // Start task timer
+    document.dispatchEvent(new CustomEvent('start-task-timer'));
 }
 
-// Pause the currently running timer
 function pauseTimer() {
-    clearInterval(timerInterval); // Stop the interval
-    timerInterval = null; // Reset interval reference
-    isRunning = false; // Set running state to false
-    updateButtonIcon(); // Update the button icon to reflect state
+    clearInterval(timerInterval);
+    timerInterval = null;
+    isRunning = false;
+    updateButtonIcon();
+
+    // Stop task timer
+    document.dispatchEvent(new Event('stop-task-timer'));
 }
+
 
 // Reset the timer to the start of the current session
 function resetTimer() {
-    clearInterval(timerInterval); // Stop the interval
-    timerInterval = null; // Reset interval reference
-    isRunning = false; // Set running state to false
-    currentTime = currentSession === 'Timer' ? startTime : getBreakDuration(); // Reset time based on session
-    updateDisplay(); // Update the timer display
-    updateButtonIcon(); // Update the button icon to reflect state
+    clearInterval(timerInterval);
+    timerInterval = null;
+    isRunning = false;
+
+    // Reset the main timer's time
+    currentTime = currentSession === 'Timer' ? startTime : getBreakDuration();
+    updateDisplay();
+    updateButtonIcon();
+
+    // Dispatch an event so tasks.js can do its reset
+    document.dispatchEvent(new Event('stop-task-timer'));
+    document.dispatchEvent(new Event('reset-task-timer'));
 }
+
 
 // Skip to the next session type based on current state
 function skipToBreak() {
@@ -182,4 +201,49 @@ function getBreakDuration() {
         return parseInt(localStorage.getItem('long-break') || 15) * 60; // Return long break duration in seconds
     }
     return startTime; // Return default work duration for Timer session
+}
+
+function addTask() {
+    const taskInput = document.getElementById('task-name');
+    const taskName = taskInput.value.trim();
+    if (!taskName) return alert('Task name cannot be empty.');
+
+    tasks.push({ name: taskName, timeSpent: 0, completed: false });
+    taskInput.value = ''; // Clear input
+    renderTasks();
+}
+
+function renderTasks() {
+    const taskList = document.getElementById('task-list');
+    taskList.innerHTML = '';
+
+    tasks.forEach((task, index) => {
+        const taskElement = document.createElement('div');
+        taskElement.className = 'task-item';
+        if (index === activeTaskIndex) taskElement.classList.add('active');
+        if (task.completed) taskElement.classList.add('completed');
+
+        taskElement.innerHTML = `
+            <span>${task.name}</span>
+            <div>
+                <span>${Math.floor(task.timeSpent / 60)}m</span>
+                <input type="checkbox" ${task.completed ? 'checked' : ''} data-index="${index}" />
+            </div>
+        `;
+        taskList.appendChild(taskElement);
+    });
+}
+
+function handleTaskClick(event) {
+    const target = event.target;
+
+    if (target.tagName === 'INPUT' && target.type === 'checkbox') {
+        const index = target.getAttribute('data-index');
+        tasks[index].completed = target.checked;
+        renderTasks();
+    } else if (target.tagName === 'SPAN') {
+        const taskIndex = [...target.parentElement.parentElement.children].indexOf(target.parentElement);
+        activeTaskIndex = taskIndex;
+        renderTasks();
+    }
 }

@@ -10,6 +10,18 @@
     <!-- Sets the title of the Stats page -->
     <link rel="stylesheet" href="css/styles.css">
     <!-- Links to the custom stylesheet for styling the page -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/auth/check-session')
+                .then((res) => res.json())
+                .then((data) => {
+                    if (!data.loggedIn) {
+                        window.location.href = 'login.html';
+                    }
+                })
+                .catch((err) => console.error('Error checking session:', err));
+        });
+    </script>
 </head>
 <body>
     <header>

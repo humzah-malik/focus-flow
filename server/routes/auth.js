@@ -1,48 +1,106 @@
 const express = require('express');
 const router = express.Router();
-const { passport } = require('../auth/passport');
+const User = require('../models/user'); // User model
+const bcrypt = require('bcrypt');
+const path = require('path');
+const passport = require('passport');  // <--- Add this line
 
-// Route to start Google OAuth2 login
-router.get('/google', passport.authenticate('google', {
-    scope: [
-        'https://www.googleapis.com/auth/tasks.readonly',
-        'https://www.googleapis.com/auth/calendar.readonly'
-    ]
-}));
+// User signup route
+router.post('/signup', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).send('Email and password are required.');
 
-// OAuth2 callback route
-router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
-    if (req.isAuthenticated()) {
-        const { photos } = req.user.profile; // Google profile picture
-        res.json({ loggedIn: true, profilePicture: photos[0].value });
-        res.redirect('/timer'); // Redirect to timer page on successful login
-    } else {
-        res.json({ loggedIn: false });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).send('User already exists.');
+
+    const newUser = new User({ email, password });
+    await newUser.save();
+    res.status(201).send('User registered successfully!');
+    // Inside the signup route, after hashing the password
+    console.log('Hashed password:', newUser.password);
+  } catch (error) {
+    console.error('Error during signup:', error);
+    res.status(500).send('Error registering user.');
+  }
+});
+  
+
+// User login route
+/*
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    console.log('Login request received:', { email, password }); // Log the request body
+
+    try {
+        const user = await User.findOne({ email });
+        console.log('User found:', user); // Log the user object
+
+        if (!user) {
+            console.log('User not found'); // Log if user is not found
+            return res.status(400).send('User not found');
+        }
+
+        const isMatch = await user.comparePassword(password);
+        console.log('Password match:', isMatch); // Log password comparison result
+
+        if (!isMatch) {
+            console.log('Invalid password'); // Log if password doesn't match
+            return res.status(400).send('Invalid credentials');
+        }
+
+        console.log('Login successful');
+        res.status(200).send('Login successful');
+    } catch (err) {
+        console.error('Error during login:', err); // Log the error
+        res.status(500).send('Error logging in');
     }
 });
+*/
 
-// Logout route
+router.post('/login',
+  passport.authenticate('local', {
+    successRedirect: '/index.html', // or wherever
+    failureRedirect: '/login.html',
+    failureFlash: true
+  })
+);
+
+
+
+// User logout route
 router.get('/logout', (req, res) => {
-    req.logout(() => {
-        res.redirect('/');
+  req.logout(function (err) {
+    if (err) {
+      console.error('Error during logout:', err);
+      return res.status(500).send('Error logging out.');
+    }
+    
+    // Destroy the entire session:
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Error destroying session:', err);
+        return res.status(500).send('Error logging out.');
+      }
+
+      // Optionally clear the cookie in the response, so the browser removes it immediately:
+      res.clearCookie('connect.sid');
+
+      // Now the user session + cookie are fully invalidated
+      res.send('Logout successful!');
     });
+  });
 });
+
+
+// Route to serve the signup page
+router.get('/signup', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../public/signup.html')); // Adjust the path if necessary
+});
+
 
 module.exports = router;
 
-// session management
-const session = require('express-session');
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true
-}));
-
-// passport initialization
-const { passport } = require('./server/auth/passport');
-app.use(passport.initialize());
-app.use(passport.session());
-
-// auth Routes
-const authRoutes = require('./server/routes/auth');
-app.use('/auth', authRoutes);
+router.get('/check-session', (req, res) => {
+  res.json({ loggedIn: req.isAuthenticated() });
+});

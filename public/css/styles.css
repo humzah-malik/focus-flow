@@ -136,3 +136,158 @@ nav ul li a.active {
     display: inline-block; /* Ensure it wraps tightly around the text */
 }
 
+#login-box {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-align: center;
+}
+#login-link {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+}
+#login-link:hover {
+    text-decoration: underline;
+}
+
+#logout-popup {
+    width: 200px;
+    height: auto;
+    text-align: center;
+}
+
+#logout-popup button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.profile-pic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Tasks container styling */
+#tasks-container {
+    margin-top: 20px; /* Add space between timer and tasks */
+    padding: 15px; /* Inner padding */
+    background-color: #f9f9f9; /* Light background */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    text-align: left; /* Align text to the left */
+}
+
+/* Styling for task input field and button */
+#task-input-container {
+    display: flex; /* Align input and button horizontally */
+    gap: 10px; /* Space between input and button */
+    margin-bottom: 15px; /* Space below the input section */
+}
+
+#task-input {
+    flex: 1; /* Take up available space */
+    padding: 10px; /* Inner padding */
+    border: 1px solid #ddd; /* Border style */
+    border-radius: 5px; /* Rounded corners */
+    font-size: 16px; /* Adjust font size */
+}
+
+#add-task-btn {
+    padding: 10px 20px; /* Add padding for size */
+    border: none; /* Remove border */
+    background-color: #4CAF50; /* Green background */
+    color: white; /* White text */
+    font-size: 16px; /* Font size */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer; /* Pointer on hover */
+}
+
+#add-task-btn:hover {
+    background-color: #45a049; /* Slightly darker green */
+}
+
+/* Styling for task list items */
+.task-list {
+    list-style-type: none; /* Remove default bullets */
+    padding: 0; /* Remove padding */
+    margin: 0; /* Remove margin */
+}
+
+.task-list-item {
+    display: flex; /* Align items horizontally */
+    justify-content: space-between; /* Space between name and time */
+    align-items: center; /* Center-align items */
+    padding: 10px; /* Inner padding */
+    margin-bottom: 10px; /* Space between tasks */
+    background-color: #fff; /* White background */
+    border: 1px solid #ddd; /* Light border */
+    border-radius: 5px; /* Rounded corners */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    cursor: grab; /* Indicate draggable items */
+}
+
+.task-list-item.completed {
+    text-decoration: line-through; /* Cross out completed tasks */
+    color: #aaa; /* Faded color for text */
+}
+
+.task-list-item:hover {
+    background-color: #f1f1f1; /* Highlight on hover */
+}
+
+/* Highlight the active task */
+.task-list-item.active {
+    border-left: 5px solid #4CAF50; /* Green highlight */
+}
+
+/* Styling for task timer display */
+.task-timer {
+    font-size: 14px; /* Smaller text size */
+    color: #333; /* Darker text color */
+}
+
+/* Checkmark button styling */
+.task-checkmark {
+    background-color: transparent; /* Transparent background */
+    border: none; /* Remove border */
+    color: #4CAF50; /* Green color */
+    font-size: 18px; /* Slightly larger font */
+    cursor: pointer; /* Pointer on hover */
+}
+
+.task-checkmark:hover {
+    color: #45a049; /* Slightly darker green */
+}
+
+/* Make tasks draggable */
+.task-list-item.dragging {
+    opacity: 0.5; /* Dim while dragging */
+    background-color: #e0e0e0; /* Slightly lighter background */
+}
+
+.task-item .task-time {
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+/* Make local and total time visually distinct */
+.task-local-time {
+    font-weight: bold;
+    color: #007BFF; /* Blue for local time */
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.task-total-time {
+    font-weight: bold;
+    color: #333;    /* Dark gray for total time */
+    margin-left: 10px;
+}
