@@ -1,3 +1,5 @@
+// public/js/timer.js
+
 // Global Variables
 let startTime = 25 * 60; // Default timer duration in seconds (25 minutes)
 let currentTime = startTime; // Tracks the remaining time in the current session
@@ -6,8 +8,14 @@ let isRunning = false; // Boolean to track whether the timer is running
 let currentSession = 'Timer'; // Tracks the current session type: 'Timer', 'Short Break', or 'Long Break'
 let sessionCount = 1; // Tracks the number of completed work sessions
 let sessionsBeforeLongBreak = 4; // Default number of work sessions before a long break
-let tasks = [];
-let activeTaskIndex = null;
+
+// Variables to hold auto-start settings
+let autoStartBreaks = false;
+let autoStartTimer = false;
+
+// Variables to hold break durations
+let shortBreakDuration = 5 * 60; // default 5 minutes
+let longBreakDuration = 15 * 60; // default 15 minutes
 
 // Load settings and attach event listeners
 document.addEventListener('DOMContentLoaded', function () {
@@ -23,10 +31,95 @@ function attachEventListeners() {
     document.getElementById('reset-btn').addEventListener('click', resetTimer);
     // Event listener for skip button
     document.getElementById('skip-btn').addEventListener('click', skipToBreak);
+}
 
-    document.getElementById('add-task-btn').addEventListener('click', addTask);
-    document.getElementById('task-list').addEventListener('click', handleTaskClick);
+// Function to check if user is logged in
+async function isLoggedIn() {
+    try {
+        const res = await fetch('/check-session', { method: 'GET', credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to check session');
+        const data = await res.json();
+        return data.loggedIn;
+    } catch (err) {
+        console.error('Error checking session:', err);
+        return false;
+    }
+}
 
+// Function to load settings from server
+async function loadSettingsFromServer() {
+    try {
+        const res = await fetch('/settings', { method: 'GET', credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to fetch settings');
+        const settings = await res.json();
+        // Set global variables based on settings
+        startTime = settings.workDuration * 60;
+        currentTime = startTime;
+        sessionsBeforeLongBreak = settings.sessionsBeforeLongBreak;
+        autoStartBreaks = settings.autoStartBreaks;
+        autoStartTimer = settings.autoStartTimer;
+
+        shortBreakDuration = settings.shortBreak * 60;
+        longBreakDuration = settings.longBreak * 60;
+
+        updateDisplay(); // Update the timer display
+
+        // Do not auto-start on page load
+    } catch (err) {
+        console.error('Error loading settings from server:', err);
+        loadDefaultSettings();
+    }
+}
+
+// Function to load default settings
+function loadDefaultSettings() {
+    // Set default settings
+    startTime = 25 * 60;
+    currentTime = startTime;
+    sessionsBeforeLongBreak = 4;
+    autoStartBreaks = false;
+    autoStartTimer = false;
+
+    shortBreakDuration = 5 * 60;
+    longBreakDuration = 15 * 60;
+
+    updateDisplay(); // Update the timer display
+
+    // Do not auto-start on page load
+}
+
+// Function to load settings from localStorage
+function loadSettingsFromLocalStorage() {
+    // Load settings from localStorage or use defaults
+    const settings = JSON.parse(localStorage.getItem('settings')) || {
+        workDuration: 25,
+        shortBreak: 5,
+        longBreak: 15,
+        sessionsBeforeLongBreak: 4,
+        autoStartBreaks: false,
+        autoStartTimer: false,
+    };
+
+    startTime = settings.workDuration * 60;
+    currentTime = startTime;
+    sessionsBeforeLongBreak = settings.sessionsBeforeLongBreak;
+    autoStartBreaks = settings.autoStartBreaks;
+    autoStartTimer = settings.autoStartTimer;
+
+    shortBreakDuration = settings.shortBreak * 60;
+    longBreakDuration = settings.longBreak * 60;
+
+    updateDisplay(); // Update the timer display
+}
+
+// Function to load settings based on login status
+async function loadSettings() {
+    const loggedIn = await isLoggedIn();
+    if (loggedIn) {
+        await loadSettingsFromServer();
+    } else {
+        loadSettingsFromLocalStorage();
+    }
 }
 
 // Toggle timer between running and paused states
@@ -55,20 +148,24 @@ function startTimer() {
     }, 1000);
     updateButtonIcon();
 
-    // Start task timer
-    document.dispatchEvent(new CustomEvent('start-task-timer'));
+    // Dispatch start-task-timer only if currentSession is 'Timer'
+    if (currentSession === 'Timer') {
+        document.dispatchEvent(new CustomEvent('start-task-timer', { detail: { session: currentSession } }));
+    }
 }
 
+// Pause the timer
 function pauseTimer() {
     clearInterval(timerInterval);
     timerInterval = null;
     isRunning = false;
     updateButtonIcon();
 
-    // Stop task timer
-    document.dispatchEvent(new Event('stop-task-timer'));
+    // Dispatch stop-task-timer only if currentSession is 'Timer'
+    if (currentSession === 'Timer') {
+        document.dispatchEvent(new Event('stop-task-timer'));
+    }
 }
-
 
 // Reset the timer to the start of the current session
 function resetTimer() {
@@ -81,11 +178,10 @@ function resetTimer() {
     updateDisplay();
     updateButtonIcon();
 
-    // Dispatch an event so tasks.js can do its reset
+    // Dispatch events to reset task timers
     document.dispatchEvent(new Event('stop-task-timer'));
     document.dispatchEvent(new Event('reset-task-timer'));
 }
-
 
 // Skip to the next session type based on current state
 function skipToBreak() {
@@ -119,6 +215,35 @@ function handleSessionCompletion() {
     } else {
         startNewTimerSession(); // Start a new work session after a break
     }
+
+    // Determine the next session type
+    let nextSessionType = currentSession;
+    if (currentSession === 'Timer') {
+        nextSessionType = (sessionCount > sessionsBeforeLongBreak) ? 'Long Break' : 'Short Break';
+    } else {
+        nextSessionType = 'Timer';
+    }
+
+    // Function to start the next session after a delay
+    const startNextSession = () => {
+        if (nextSessionType === 'Timer' && autoStartTimer) {
+            startTimer();
+        } else if ((nextSessionType === 'Short Break' || nextSessionType === 'Long Break') && autoStartBreaks) {
+            startTimer();
+        }
+    };
+
+    // Decide whether to auto-start the next session based on settings
+    if (
+        (currentSession === 'Timer' && autoStartBreaks) ||
+        ((currentSession === 'Short Break' || currentSession === 'Long Break') && autoStartTimer)
+    ) {
+        // Add a 1-2 second delay before starting the next session
+        setTimeout(startNextSession, 1500); // 1.5 seconds delay
+
+        // Update the Play button display when session starts automatically
+        updateButtonIcon(); // Ensure the Play/Pause button reflects the running state
+    }
 }
 
 // Start a new "Timer" session
@@ -131,23 +256,14 @@ function startNewTimerSession() {
 // Start a short break session
 function startShortBreak() {
     currentSession = 'Short Break'; // Set the session type to Short Break
-    currentTime = parseInt(localStorage.getItem('short-break') || 5) * 60; // Get short break duration from settings or default
+    currentTime = shortBreakDuration; // Get short break duration from settings or default
     updateDisplay(); // Update the timer display
 }
 
 // Start a long break session
 function startLongBreak() {
     currentSession = 'Long Break'; // Set the session type to Long Break
-    currentTime = parseInt(localStorage.getItem('long-break') || 15) * 60; // Get long break duration from settings or default
-    updateDisplay(); // Update the timer display
-}
-
-// Load settings from localStorage
-function loadSettings() {
-    const workDuration = parseInt(localStorage.getItem('work-duration')) || 25; // Get work duration from settings or default
-    startTime = workDuration * 60; // Convert minutes to seconds
-    currentTime = startTime; // Reset current time to the work duration
-    sessionsBeforeLongBreak = parseInt(localStorage.getItem('sessions')) || 4; // Get sessions before long break from settings or default
+    currentTime = longBreakDuration; // Get long break duration from settings or default
     updateDisplay(); // Update the timer display
 }
 
@@ -196,54 +312,90 @@ function updateButtonIcon() {
 // Get the appropriate break duration
 function getBreakDuration() {
     if (currentSession === 'Short Break') {
-        return parseInt(localStorage.getItem('short-break') || 5) * 60; // Return short break duration in seconds
+        return shortBreakDuration; // Return short break duration in seconds
     } else if (currentSession === 'Long Break') {
-        return parseInt(localStorage.getItem('long-break') || 15) * 60; // Return long break duration in seconds
+        return longBreakDuration; // Return long break duration in seconds
     }
     return startTime; // Return default work duration for Timer session
 }
 
-function addTask() {
-    const taskInput = document.getElementById('task-name');
-    const taskName = taskInput.value.trim();
-    if (!taskName) return alert('Task name cannot be empty.');
-
-    tasks.push({ name: taskName, timeSpent: 0, completed: false });
-    taskInput.value = ''; // Clear input
-    renderTasks();
-}
-
-function renderTasks() {
-    const taskList = document.getElementById('task-list');
-    taskList.innerHTML = '';
-
-    tasks.forEach((task, index) => {
-        const taskElement = document.createElement('div');
-        taskElement.className = 'task-item';
-        if (index === activeTaskIndex) taskElement.classList.add('active');
-        if (task.completed) taskElement.classList.add('completed');
-
-        taskElement.innerHTML = `
-            <span>${task.name}</span>
-            <div>
-                <span>${Math.floor(task.timeSpent / 60)}m</span>
-                <input type="checkbox" ${task.completed ? 'checked' : ''} data-index="${index}" />
-            </div>
-        `;
-        taskList.appendChild(taskElement);
-    });
-}
-
-function handleTaskClick(event) {
-    const target = event.target;
-
-    if (target.tagName === 'INPUT' && target.type === 'checkbox') {
-        const index = target.getAttribute('data-index');
-        tasks[index].completed = target.checked;
-        renderTasks();
-    } else if (target.tagName === 'SPAN') {
-        const taskIndex = [...target.parentElement.parentElement.children].indexOf(target.parentElement);
-        activeTaskIndex = taskIndex;
-        renderTasks();
+// ------------------------------------------------------------------
+// 6) RESPOND TO MAIN TIMER EVENTS (FROM tasks.js)
+// ------------------------------------------------------------------
+document.addEventListener('start-task-timer', () => {
+    // No change needed
+    // If a task is active, resume its interval
+    if (activeTaskId) {
+        startActiveTaskInterval();
     }
-}
+});
+
+document.addEventListener('stop-task-timer', () => {
+    // No change needed
+    // Stop counting time on the active task
+    stopActiveTaskInterval();
+
+    // If there's an active task, update the DB with the new timeSpent
+    if (activeTaskId) {
+        // 1) old total from DB
+        const oldDB = dbTimeSpent[activeTaskId] || 0;
+        // 2) localTime from this session
+        const local = localTime[activeTaskId] || 0;
+        // 3) new total = old + local
+        const newTotal = oldDB + local;
+
+        fetch(`/tasks/${activeTaskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ timeSpent: newTotal })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to update timeSpent');
+            return res.json();
+        })
+        .then(data => {
+            console.log('Updated timeSpent in DB:', data.task.timeSpent);
+            updateTaskTotalTime(data.task._id, data.task.timeSpent);
+        })
+        .catch(err => console.error(err));
+    }
+});
+
+// Reset task timer
+document.addEventListener('reset-task-timer', () => {
+    // No change needed
+    mainTimerRunning = false;
+    stopActiveTaskInterval();
+
+    if (activeTaskId) {
+        // Reset the local time to 0
+        taskTimes[activeTaskId] = 0;
+
+        // Update the local DOM display
+        const activeTask = document.querySelector(`[data-task-id="${activeTaskId}"]`);
+        if (activeTask) {
+            activeTask.querySelector('.task-local-time').textContent = '0m0s';
+        }
+
+        // **NEW**: PUT request to reset timeSpent on the server
+        /*
+        fetch(`/tasks/${activeTaskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ timeSpent: 0 })
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Failed to reset timeSpent in DB');
+            }
+            return res.json();
+        })
+        .then(data => {
+            console.log('Successfully reset task on server:', data.task);
+        })
+        .catch(err => {
+            console.error(err);
+        });
+        */
+    }
+});

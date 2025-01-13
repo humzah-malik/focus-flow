@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Check if user is logged in
-    fetch('/auth/check-session')
+    fetch('/check-session')
         .then((res) => res.json())
         .then((data) => {
             const loginLink = document.getElementById('login-link');

@@ -66,7 +66,29 @@ router.post('/login',
   })
 );
 
+// Add the following POST /logout route
+router.post('/logout', (req, res) => {
+  req.logout(function (err) {
+    if (err) {
+      console.error('Error during logout:', err);
+      return res.status(500).send('Error logging out.');
+    }
 
+    // Destroy the entire session
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Error destroying session:', err);
+        return res.status(500).send('Error logging out.');
+      }
+
+      // Clear the cookie
+      res.clearCookie('connect.sid');
+
+      // Respond to the client
+      res.status(200).send('Logout successful!');
+    });
+  });
+});
 
 // User logout route
 router.get('/logout', (req, res) => {
@@ -87,20 +109,18 @@ router.get('/logout', (req, res) => {
       res.clearCookie('connect.sid');
 
       // Now the user session + cookie are fully invalidated
-      res.send('Logout successful!');
+      res.status(200).send('Logout successful!');
     });
   });
 });
 
+router.get('/check-session', (req, res) => {
+  res.json({ loggedIn: req.isAuthenticated() });
+});
 
 // Route to serve the signup page
 router.get('/signup', (req, res) => {
   res.sendFile(path.join(__dirname, '../../public/signup.html')); // Adjust the path if necessary
 });
 
-
 module.exports = router;
-
-router.get('/check-session', (req, res) => {
-  res.json({ loggedIn: req.isAuthenticated() });
-});

@@ -25,15 +25,16 @@ router.post('/', ensureAuthenticated, async (req, res) => {
   }
 });
 
-// GET all tasks for the logged-in user
+// GET all active (non-completed) tasks for the logged-in user
 router.get('/', ensureAuthenticated, async (req, res) => {
   try {
-    const tasks = await Task.find({ user: req.user._id });
+    const tasks = await Task.find({ user: req.user._id, completed: false });
     res.json(tasks);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // UPDATE a task (completed status, title, etc.)
 router.put('/:taskId', ensureAuthenticated, async (req, res) => {

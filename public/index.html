@@ -49,13 +49,26 @@
             </div>
             <div class="session-info" id="session-info"></div>
         </div>
+
+        <!-- If user not connected, show "Connect to Todoist" -->
+        <a href="/todoist/connect" id="connect-todoist-btn">Connect to Todoist</a>
+
+        <!-- A button to import tasks from Todoist -->
+        <button id="import-todoist-btn">Import from Todoist</button>
         <!-- Area to display additional session-related information -->
 
         <div id="task-container">
             <input type="text" id="task-input" placeholder="Enter a task" />
             <button id="add-task-button">Add Task</button>
             <div id="task-list"></div>
-          </div>          
+        </div>
+        
+        <div id="todoist-task-modal" style="display: none;">
+            <h3>Select Tasks to Import</h3>
+            <div id="todoist-task-list"></div>
+            <button id="confirm-import">Import Selected Tasks</button>
+            <button id="cancel-import">Cancel</button>
+        </div>  
         
     </div>    
     <script src="js/timer.js"></script>

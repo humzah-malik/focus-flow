@@ -6,6 +6,8 @@ const session = require('express-session'); // For managing sessions
 const passport = require('./server/auth/passport'); // Use custom passport configuration
 const authRoutes = require('./server/routes/auth'); // Import authentication routes
 const taskRoutes = require('./server/routes/tasks');
+const todoistRoutes = require('./server/routes/todoist');
+const settingsRoutes = require('./server/routes/settings'); // Add this line
 require('dotenv').config(); // Load environment variables from .env
 
 // Initialize the app
@@ -28,6 +30,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use('/tasks', taskRoutes);
+app.use('/settings', settingsRoutes);
 
 // Protect stats.html
 app.get('/stats.html', ensureAuthenticated, (req, res) => {
@@ -39,6 +42,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Use authentication routes
 app.use('/', authRoutes);
+
+app.use('/', todoistRoutes);
 
 const mongoose = require('mongoose');
 console.log('MongoDB URI:', process.env.MONGO_URI);

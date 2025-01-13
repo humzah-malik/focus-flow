@@ -5,6 +5,15 @@ const bcrypt = require('bcrypt');
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  todoistToken: { type: String },
+  settings: { // New field for user settings
+    workDuration: { type: Number, default: 25 }, // in minutes
+    shortBreak: { type: Number, default: 5 },    // in minutes
+    longBreak: { type: Number, default: 15 },    // in minutes
+    sessionsBeforeLongBreak: { type: Number, default: 4 },
+    autoStartBreaks: { type: Boolean, default: false },
+    autoStartTimer: { type: Boolean, default: false },
+  },
 });
 
 // Pre-save middleware to hash the password

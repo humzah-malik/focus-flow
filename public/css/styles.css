@@ -291,3 +291,82 @@ nav ul li a.active {
     color: #333;    /* Dark gray for total time */
     margin-left: 10px;
 }
+
+/* Styling for the Todoist Task Modal */
+#todoist-task-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    z-index: 1000;
+    max-height: 80vh;
+    width: 80%;
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    border-radius: 8px;
+}
+
+#todoist-task-modal h3 {
+    margin-top: 0;
+    text-align: center;
+}
+
+/* Styling for each project container */
+.todoist-project {
+    margin-bottom: 20px;
+}
+
+.todoist-project h4 {
+    margin-bottom: 10px;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+/* Styling for tasks under each project */
+.todoist-task-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.todoist-task-item input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+/* Hover effect for task items */
+.todoist-task-item:hover {
+    background-color: #f1f1f1;
+    border-radius: 4px;
+    padding: 2px 5px;
+}
+
+#logout-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#logout-modal > div {
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#logout-modal p {
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #333;
+}
