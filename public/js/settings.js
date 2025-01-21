@@ -3,6 +3,7 @@
 import DEFAULT_SETTINGS from './defaultSettings.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM fully loaded');
     // Get references to all slider elements and their display spans
     const workDurationSlider = document.getElementById('work-duration-slider');
     const workDurationValue = document.getElementById('work-duration-value');
@@ -16,15 +17,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const sessionsSlider = document.getElementById('sessions-slider');
     const sessionsValue = document.getElementById('sessions-value');
 
-    const autoStartBreaksCheckbox = document.getElementById('auto-start-breaks');
-    const autoStartTimerCheckbox = document.getElementById('auto-start-timer');
+    const autoStartAllCheckbox = document.getElementById('auto-start-all');
 
     const resetDefaultBtn = document.getElementById('reset-default-btn'); // Reset button
 
     // Function to update the display value next to each slider
+    /*
     const updateDisplayValue = (slider, display) => {
         display.textContent = slider.value;
     };
+    */
+
+    const updateDisplayValue = (slider, display) => {
+        const unit = slider.id.includes('sessions') ? '' : ' min';
+        display.textContent = `${slider.value}${unit}`;
+        console.log(`${slider.id}: ${slider.value}`);
+    };    
 
     // Initialize display values based on current slider positions
     updateDisplayValue(workDurationSlider, workDurationValue);
@@ -81,8 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             sessionsSlider.value = settings.sessionsBeforeLongBreak;
             updateDisplayValue(sessionsSlider, sessionsValue);
 
-            autoStartBreaksCheckbox.checked = settings.autoStartBreaks;
-            autoStartTimerCheckbox.checked = settings.autoStartTimer;
+            autoStartAllCheckbox.checked = settings.autoStartAll;
         } catch (err) {
             console.error('Error loading settings from server:', err);
             // Optionally, fall back to default settings
@@ -105,8 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         sessionsSlider.value = DEFAULT_SETTINGS.sessionsBeforeLongBreak;
         updateDisplayValue(sessionsSlider, sessionsValue);
 
-        autoStartBreaksCheckbox.checked = DEFAULT_SETTINGS.autoStartBreaks;
-        autoStartTimerCheckbox.checked = DEFAULT_SETTINGS.autoStartTimer;
+        autoStartAllCheckbox.checked = DEFAULT_SETTINGS.autoStartAll;
     }
 
     // Function to load settings from localStorage
@@ -126,8 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         sessionsSlider.value = settings.sessionsBeforeLongBreak;
         updateDisplayValue(sessionsSlider, sessionsValue);
 
-        autoStartBreaksCheckbox.checked = settings.autoStartBreaks;
-        autoStartTimerCheckbox.checked = settings.autoStartTimer;
+        autoStartAllCheckbox.checked = settings.autoStartAll;  // A single boolean
     }
 
     // Function to load settings based on login status
@@ -150,12 +155,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Gather settings from the form
         const settings = {
-            workDuration: parseInt(workDurationSlider.value),
-            shortBreak: parseInt(shortBreakSlider.value),
-            longBreak: parseInt(longBreakSlider.value),
-            sessionsBeforeLongBreak: parseInt(sessionsSlider.value),
-            autoStartBreaks: autoStartBreaksCheckbox.checked,
-            autoStartTimer: autoStartTimerCheckbox.checked,
+            workDuration: parseInt(workDurationSlider.value, 10),
+            shortBreak: parseInt(shortBreakSlider.value, 10),
+            longBreak: parseInt(longBreakSlider.value, 10),
+            sessionsBeforeLongBreak: parseInt(sessionsSlider.value, 10),
+            autoStartAll: autoStartAllCheckbox.checked,
         };
 
         const loggedIn = await isLoggedIn();
@@ -318,3 +322,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 });
+
+// In settings.js, after DOMContentLoaded:
+document.getElementById('settings-btn').addEventListener('click', async () => {
+    document.getElementById('settings-modal').classList.remove('hidden');
+    await loadSettingsBasedOnLogin();
+  });
+  document.getElementById('close-settings').addEventListener('click', () => {
+    document.getElementById('settings-modal').classList.add('hidden');
+  });
+  
+// at the end of settings.js
+window.loadSettingsBasedOnLogin = loadSettingsBasedOnLogin;

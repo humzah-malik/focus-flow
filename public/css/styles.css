@@ -329,9 +329,11 @@ nav ul li a.active {
 /* Styling for tasks under each project */
 .todoist-task-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* so it lines up top if it's multiline */
     margin-bottom: 5px;
-}
+    white-space: normal;     /* allow wrapping */
+    word-break: break-word;  /* break long words */
+  }  
 
 .todoist-task-item input[type="checkbox"] {
     margin-right: 10px;
@@ -370,3 +372,56 @@ nav ul li a.active {
     font-size: 16px;
     color: #333;
 }
+
+/* Drag placeholder styling */
+.bg-gray-200 {
+    background-color: #e5e7eb; /* Tailwind's gray-200 */
+}
+
+
+.sortable-list {
+    border: 1px solid #ccc; /* Border for the task container */
+    padding: 10px; /* Padding inside the container */
+    border-radius: 5px; /* Rounded corners */
+    max-width: 400px; /* Maximum width for the task container */
+    margin: 20px auto; /* Center the container */
+}
+
+.task-item {
+    background-color: #f5f5f5; /* Background color for task items */
+    padding: 10px; /* Padding inside task items */
+    margin-bottom: 5px; /* Space between task items */
+    cursor: move; /* Indicate that items are draggable */
+    border: 1px solid #ccc; /* Border for task items */
+    border-radius: 3px; /* Rounded corners for task items */
+}
+
+.task-item:hover {
+    background-color: #e0e0e0; /* Change background on hover */
+}
+
+#timer-circle-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 20px auto;
+}
+
+#timer-circle-svg {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+}
+
+.timer-display-inner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2em;
+    color: #6A5ACD;
+}
+
+.selected-task {
+    border-left: 4px solid black !important;
+  }  

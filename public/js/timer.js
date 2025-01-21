@@ -10,8 +10,8 @@ let sessionCount = 1; // Tracks the number of completed work sessions
 let sessionsBeforeLongBreak = 4; // Default number of work sessions before a long break
 
 // Variables to hold auto-start settings
-let autoStartBreaks = false;
-let autoStartTimer = false;
+// Single auto-start setting
+let autoStartAll = false;
 
 // Variables to hold break durations
 let shortBreakDuration = 5 * 60; // default 5 minutes
@@ -56,8 +56,7 @@ async function loadSettingsFromServer() {
         startTime = settings.workDuration * 60;
         currentTime = startTime;
         sessionsBeforeLongBreak = settings.sessionsBeforeLongBreak;
-        autoStartBreaks = settings.autoStartBreaks;
-        autoStartTimer = settings.autoStartTimer;
+        autoStartAll = settings.autoStartAll;
 
         shortBreakDuration = settings.shortBreak * 60;
         longBreakDuration = settings.longBreak * 60;
@@ -77,8 +76,7 @@ function loadDefaultSettings() {
     startTime = 25 * 60;
     currentTime = startTime;
     sessionsBeforeLongBreak = 4;
-    autoStartBreaks = false;
-    autoStartTimer = false;
+    autoStartAll = false;
 
     shortBreakDuration = 5 * 60;
     longBreakDuration = 15 * 60;
@@ -96,15 +94,13 @@ function loadSettingsFromLocalStorage() {
         shortBreak: 5,
         longBreak: 15,
         sessionsBeforeLongBreak: 4,
-        autoStartBreaks: false,
-        autoStartTimer: false,
+        autoStartAll: false,
     };
 
     startTime = settings.workDuration * 60;
     currentTime = startTime;
     sessionsBeforeLongBreak = settings.sessionsBeforeLongBreak;
-    autoStartBreaks = settings.autoStartBreaks;
-    autoStartTimer = settings.autoStartTimer;
+    autoStartAll = settings.autoStartAll;
 
     shortBreakDuration = settings.shortBreak * 60;
     longBreakDuration = settings.longBreak * 60;
@@ -194,6 +190,18 @@ function skipToBreak() {
         handleSessionCompletion(); // Handle session completion if skipping during Timer
     } else {
         startNewTimerSession(); // Start a new Timer session if skipping a break
+
+        // Then optionally auto-start if autoStartAll is true,
+        // but not if it's the "first Timer in a cycle."
+        if (autoStartAll) {
+            const isFirstTimerInCycle = (sessionCount === 1 && currentSession === 'Timer');
+            if (!isFirstTimerInCycle) {
+                setTimeout(() => {
+                    startTimer();
+                    updateButtonIcon();
+                }, 1500);
+            }
+        }
     }
 
     updateDisplay(); // Update the timer display
@@ -234,15 +242,36 @@ function handleSessionCompletion() {
     };
 
     // Decide whether to auto-start the next session based on settings
-    if (
-        (currentSession === 'Timer' && autoStartBreaks) ||
-        ((currentSession === 'Short Break' || currentSession === 'Long Break') && autoStartTimer)
-    ) {
-        // Add a 1-2 second delay before starting the next session
-        setTimeout(startNextSession, 1500); // 1.5 seconds delay
+    // --- new snippet to handle autoStartAll ---
+    if (autoStartAll) {
+        // figure out the next session type
+        /*
+        let nextSessionType;
+        if (currentSession === 'Timer') {
+            // we just ended a Timer
+            nextSessionType = (sessionCount > sessionsBeforeLongBreak) ? 'Long Break' : 'Short Break';
+        } else {
+            // we ended a break
+            nextSessionType = 'Timer';
+        }
+        */
 
-        // Update the Play button display when session starts automatically
-        updateButtonIcon(); // Ensure the Play/Pause button reflects the running state
+        // we do NOT autostart if the next session is the "first Timer in a new cycle"
+        // that means (nextSessionType === 'Timer' && sessionCount === 1)
+        const nextSessionIsLongBreak = (nextSessionType === 'Long Break');
+        const isFirstTimerInCycle = (nextSessionType === 'Timer' && sessionCount === 1);
+
+        if (nextSessionIsLongBreak) {
+            setTimeout(() => {
+              startTimer();
+              updateButtonIcon();
+            }, 1500);
+          } else if (!isFirstTimerInCycle) {
+            setTimeout(() => {
+              startTimer();
+              updateButtonIcon();
+            }, 1500);
+          }
     }
 }
 

@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
     shortBreak: { type: Number, default: 5 },    // in minutes
     longBreak: { type: Number, default: 15 },    // in minutes
     sessionsBeforeLongBreak: { type: Number, default: 4 },
+    autoStartAll: { type: Boolean, default: false },
     autoStartBreaks: { type: Boolean, default: false },
     autoStartTimer: { type: Boolean, default: false },
   },

@@ -30,6 +30,7 @@ router.put('/', ensureAuthenticated, async (req, res) => {
             shortBreak, 
             longBreak, 
             sessionsBeforeLongBreak,
+            autoStartAll,
             autoStartBreaks,
             autoStartTimer 
         } = req.body;
@@ -41,6 +42,7 @@ router.put('/', ensureAuthenticated, async (req, res) => {
         if (shortBreak !== undefined) updatedSettings['settings.shortBreak'] = shortBreak;
         if (longBreak !== undefined) updatedSettings['settings.longBreak'] = longBreak;
         if (sessionsBeforeLongBreak !== undefined) updatedSettings['settings.sessionsBeforeLongBreak'] = sessionsBeforeLongBreak;
+        if (autoStartAll !== undefined) updatedSettings['settings.autoStartAll'] = autoStartAll;
         if (autoStartBreaks !== undefined) updatedSettings['settings.autoStartBreaks'] = autoStartBreaks;
         if (autoStartTimer !== undefined) updatedSettings['settings.autoStartTimer'] = autoStartTimer;
 
@@ -68,6 +70,7 @@ router.delete('/', ensureAuthenticated, async (req, res) => {
             sessionsBeforeLongBreak: 4,
             autoStartBreaks: false,
             autoStartTimer: false,
+            autoStartAll: false,
         };
 
         // Update user's settings to original defaults

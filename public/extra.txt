@@ -51,15 +51,10 @@
             </div>
             <br>
 
-            <!-- Auto-Start Breaks Checkbox -->
-            <label for="auto-start-breaks">Auto-Start Breaks:</label>
-            <input type="checkbox" id="auto-start-breaks" name="auto-start-breaks"><br>
-            <br>
-
-            <!-- Auto-Start Timer Sessions Checkbox -->
-            <label for="auto-start-timer">Auto-Start Timer Sessions:</label>
-            <input type="checkbox" id="auto-start-timer" name="auto-start-timer"><br>
-            <br>
+            <!-- New single Autostart checkbox -->
+            <label for="auto-start-all">Autostart (Timer & Breaks):</label>
+            <input type="checkbox" id="auto-start-all" name="auto-start-all">
+            <br><br>
 
             <button type="submit">Save Settings</button>
             <button type="button" id="reset-default-btn">Reset to Original Defaults</button>
