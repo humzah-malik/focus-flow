@@ -22,26 +22,27 @@
 
     <!-- Start a top container or nav bar (not fixed). 
          We'll do a simple "flex justify-between" approach. -->
+    <!-- Updated Header Section -->
     <header class="bg-gray-800 py-4 shadow">
-      <div class="container mx-auto flex items-center justify-between px-4">
+        <div class="container mx-auto flex items-center justify-between px-4">
         <!-- Left side: App name -->
         <h1 class="text-2xl font-bold">Focus Flow</h1>
-  
-        <!-- Right side: Buttons for Stats, Settings, Login -->
-        <div class="flex space-x-4">
-          <button id="stats-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
+    
+        <!-- Right side: Buttons for Stats, Settings, Login/Logout -->
+        <div id="login-box" class="flex space-x-4">
+            <button id="stats-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
             Stats
-          </button>
-          <button id="settings-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
+            </button>
+            <button id="settings-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
             Settings
-          </button>
-          <a href="login.html" 
-             class="px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded">
+            </button>
+            <a id="login-link" href="login.html" 
+            class="px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded">
             Login
-          </a>
+            </a>
         </div>
-      </div>
-    </header>
+        </div>
+    </header>  
   
     <!-- Main content with Timer + Tasks. Use "flex-1" so it grows/shrinks to fill screen. -->
     <main class="flex-1 container mx-auto px-4 py-8">
@@ -95,7 +96,13 @@
         <div class="flex justify-between items-center mb-2">
             <h2 class="text-white text-lg font-semibold">Tasks</h2>
             <div class="relative">
-              <i id="tasks-menu-trigger" class="fas fa-ellipsis-v text-white cursor-pointer"></i>
+                <button 
+                id="tasks-menu-trigger"
+                class="three-dots-menu-btn w-8 h-8 flex items-center justify-center bg-gray-700 rounded hover:bg-gray-600 focus:outline-none transition-colors duration-200"
+                aria-label="Task options"
+            >
+                <i class="fas fa-ellipsis-v text-white" aria-hidden="true"></i>
+            </button>            
             </div>
           </div>          
         <hr class="border-gray-500 mb-4">
@@ -243,9 +250,10 @@
     <script src="js/tasks.js"></script>
     <script src="js/auth.js"></script>
     <script src="session.js"></script>
-    <script type="module "src="js/settings.js"></script> <!-- <== Add this if missing -->
+    <script type="module"src="js/settings.js"></script> <!-- <== Add this if missing -->
     <!-- near the bottom of index.html, right before </body> -->
      <!-- near bottom of index.html -->
+    <!--  
     <script>
         document.addEventListener('DOMContentLoaded', () => {
         const settingsBtn   = document.getElementById('settings-btn');
@@ -265,5 +273,6 @@
         });
         });
     </script>
+    -->
   </body>
 </html>

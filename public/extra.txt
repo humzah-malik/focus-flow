@@ -64,3 +64,681 @@
     <script src="js/settings.js" type="module"></script>
 </body>
 </html>
+
+
+// In settings.js, after DOMContentLoaded:
+document.getElementById('settings-btn').addEventListener('click', async () => {
+    document.getElementById('settings-modal').classList.remove('hidden');
+    await loadSettingsBasedOnLogin();
+  });
+  document.getElementById('close-settings').addEventListener('click', () => {
+    document.getElementById('settings-modal').classList.add('hidden');
+  });
+  
+// at the end of settings.js
+window.loadSettingsBasedOnLogin = loadSettingsBasedOnLogin;
+
+/*
+    const updateDisplayValue = (slider, display) => {
+        display.textContent = slider.value;
+    };
+    */
+
+
+------------------------------------------
+
+// public/js/timer.js
+
+// Global Variables
+let startTime = 25 * 60; // Default timer duration in seconds (25 minutes)
+let currentTime = startTime; // Tracks the remaining time in the current session
+let timerInterval = null; // Holds the reference to the interval timer
+let isRunning = false; // Boolean to track whether the timer is running
+let currentSession = 'Timer'; // Tracks the current session type: 'Timer', 'Short Break', or 'Long Break'
+let sessionCount = 1; // Tracks the number of completed work sessions
+let sessionsBeforeLongBreak = 4; // Default number of work sessions before a long break
+
+// Variables to hold auto-start settings
+// Single auto-start setting
+let autoStartAll = false;
+
+// Variables to hold break durations
+let shortBreakDuration = 5 * 60; // default 5 minutes
+let longBreakDuration = 15 * 60; // default 15 minutes
+
+// Load settings and attach event listeners
+document.addEventListener('DOMContentLoaded', function () {
+    loadSettings(); // Load settings on start
+    attachEventListeners(); // Attach event listeners to UI elements
+});
+
+// Attach event listeners to buttons
+function attachEventListeners() {
+    // Event listener for start/pause button
+    document.getElementById('start-pause-btn').addEventListener('click', toggleTimer);
+    // Event listener for reset button
+    document.getElementById('reset-btn').addEventListener('click', resetTimer);
+    // Event listener for skip button
+    document.getElementById('skip-btn').addEventListener('click', skipToBreak);
+}
+
+// Function to check if user is logged in
+async function isLoggedIn() {
+    try {
+        const res = await fetch('/check-session', { method: 'GET', credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to check session');
+        const data = await res.json();
+        return data.loggedIn;
+    } catch (err) {
+        console.error('Error checking session:', err);
+        return false;
+    }
+}
+
+// Function to load settings from server
+async function loadSettingsFromServer() {
+    try {
+        const res = await fetch('/settings', { method: 'GET', credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to fetch settings');
+        const settings = await res.json();
+        // Set global variables based on settings
+        startTime = settings.workDuration * 60;
+        currentTime = startTime;
+        sessionsBeforeLongBreak = settings.sessionsBeforeLongBreak;
+        autoStartAll = settings.autoStartAll;
+
+        shortBreakDuration = settings.shortBreak * 60;
+        longBreakDuration = settings.longBreak * 60;
+
+        updateDisplay(); // Update the timer display
+
+        // Do not auto-start on page load
+    } catch (err) {
+        console.error('Error loading settings from server:', err);
+        loadDefaultSettings();
+    }
+}
+
+// Function to load default settings
+function loadDefaultSettings() {
+    // Set default settings
+    startTime = 25 * 60;
+    currentTime = startTime;
+    sessionsBeforeLongBreak = 4;
+    autoStartAll = false;
+
+    shortBreakDuration = 5 * 60;
+    longBreakDuration = 15 * 60;
+
+    updateDisplay(); // Update the timer display
+
+    // Do not auto-start on page load
+}
+
+// Function to load settings from localStorage
+function loadSettingsFromLocalStorage() {
+    // Load settings from localStorage or use defaults
+    const settings = JSON.parse(localStorage.getItem('settings')) || {
+        workDuration: 25,
+        shortBreak: 5,
+        longBreak: 15,
+        sessionsBeforeLongBreak: 4,
+        autoStartAll: false,
+    };
+
+    startTime = settings.workDuration * 60;
+    currentTime = startTime;
+    sessionsBeforeLongBreak = settings.sessionsBeforeLongBreak;
+    autoStartAll = settings.autoStartAll;
+
+    shortBreakDuration = settings.shortBreak * 60;
+    longBreakDuration = settings.longBreak * 60;
+
+    updateDisplay(); // Update the timer display
+}
+
+// Function to load settings based on login status
+async function loadSettings() {
+    const loggedIn = await isLoggedIn();
+    if (loggedIn) {
+        await loadSettingsFromServer();
+    } else {
+        loadSettingsFromLocalStorage();
+    }
+}
+
+// Toggle timer between running and paused states
+function toggleTimer() {
+    if (!isRunning) {
+        startTimer(); // Start the timer if not running
+    } else {
+        pauseTimer(); // Pause the timer if running
+    }
+}
+
+// Start or continue the timer
+function startTimer() {
+    if (timerInterval) return;
+    isRunning = true;
+    timerInterval = setInterval(() => {
+        currentTime--;
+        if (currentTime <= 0) {
+            currentTime = 0;
+            clearInterval(timerInterval);
+            timerInterval = null;
+            isRunning = false;
+            handleSessionCompletion();
+        }
+        updateDisplay();
+    }, 1000);
+    updateButtonIcon();
+
+    // Dispatch start-task-timer only if currentSession is 'Timer'
+    if (currentSession === 'Timer') {
+        document.dispatchEvent(new CustomEvent('start-task-timer', { detail: { session: currentSession } }));
+    }
+}
+
+// Pause the timer
+function pauseTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    isRunning = false;
+    updateButtonIcon();
+
+    // Dispatch stop-task-timer only if currentSession is 'Timer'
+    if (currentSession === 'Timer') {
+        document.dispatchEvent(new Event('stop-task-timer'));
+    }
+}
+
+// Reset the timer to the start of the current session
+function resetTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    isRunning = false;
+
+    // Reset the main timer's time
+    currentTime = currentSession === 'Timer' ? startTime : getBreakDuration();
+    updateDisplay();
+    updateButtonIcon();
+
+    // Dispatch events to reset task timers
+    document.dispatchEvent(new Event('stop-task-timer'));
+    document.dispatchEvent(new Event('reset-task-timer'));
+}
+
+// Skip to the next session type based on current state
+function skipToBreak() {
+    console.log(`Skipping to next session from: ${currentSession}`);
+    clearInterval(timerInterval); // Stop the interval
+    timerInterval = null; // Reset interval reference
+    isRunning = false; // Set running state to false
+
+    if (currentSession === 'Timer') {
+        handleSessionCompletion(); // Handle session completion if skipping during Timer
+    } else {
+        startNewTimerSession(); // Start a new Timer session if skipping a break
+
+        // Then optionally auto-start if autoStartAll is true,
+        // but not if it's the "first Timer in a cycle."
+        if (autoStartAll) {
+            const isFirstTimerInCycle = (sessionCount === 1 && currentSession === 'Timer');
+            if (!isFirstTimerInCycle) {
+                setTimeout(() => {
+                    startTimer();
+                    updateButtonIcon();
+                }, 1500);
+            }
+        }
+    }
+
+    updateDisplay(); // Update the timer display
+    updateButtonIcon(); // Update the button icon to reflect state
+}
+
+// Handle completion of a session
+function handleSessionCompletion() {
+    console.log(`Session: ${currentSession}, Time: ${currentTime}, Count: ${sessionCount}`);
+
+    if (currentSession === 'Timer') {
+        if (sessionCount < sessionsBeforeLongBreak) {
+            sessionCount++; // Increment session count for work sessions
+            startShortBreak(); // Start a short break
+        } else {
+            startLongBreak(); // Start a long break after the set number of sessions
+            sessionCount = 1; // Reset session count after long break
+        }
+    } else {
+        startNewTimerSession(); // Start a new work session after a break
+    }
+
+    // Determine the next session type
+    let nextSessionType = currentSession;
+    if (currentSession === 'Timer') {
+        nextSessionType = (sessionCount > sessionsBeforeLongBreak) ? 'Long Break' : 'Short Break';
+    } else {
+        nextSessionType = 'Timer';
+    }
+
+    // Function to start the next session after a delay
+    const startNextSession = () => {
+        if (nextSessionType === 'Timer' && autoStartTimer) {
+            startTimer();
+        } else if ((nextSessionType === 'Short Break' || nextSessionType === 'Long Break') && autoStartBreaks) {
+            startTimer();
+        }
+    };
+
+    // Decide whether to auto-start the next session based on settings
+    // --- new snippet to handle autoStartAll ---
+    if (autoStartAll) {
+        // figure out the next session type
+        /*
+        let nextSessionType;
+        if (currentSession === 'Timer') {
+            // we just ended a Timer
+            nextSessionType = (sessionCount > sessionsBeforeLongBreak) ? 'Long Break' : 'Short Break';
+        } else {
+            // we ended a break
+            nextSessionType = 'Timer';
+        }
+        */
+
+        // we do NOT autostart if the next session is the "first Timer in a new cycle"
+        // that means (nextSessionType === 'Timer' && sessionCount === 1)
+        const nextSessionIsLongBreak = (nextSessionType === 'Long Break');
+        const isFirstTimerInCycle = (nextSessionType === 'Timer' && sessionCount === 1);
+
+        if (nextSessionIsLongBreak) {
+            setTimeout(() => {
+              startTimer();
+              updateButtonIcon();
+            }, 1500);
+          } else if (!isFirstTimerInCycle) {
+            setTimeout(() => {
+              startTimer();
+              updateButtonIcon();
+            }, 1500);
+          }
+    }
+}
+
+// Start a new "Timer" session
+function startNewTimerSession() {
+    currentSession = 'Timer'; // Set the session type to Timer
+    currentTime = startTime; // Reset the timer to the work duration
+    updateDisplay(); // Update the timer display
+}
+
+// Start a short break session
+function startShortBreak() {
+    currentSession = 'Short Break'; // Set the session type to Short Break
+    currentTime = shortBreakDuration; // Get short break duration from settings or default
+    updateDisplay(); // Update the timer display
+}
+
+// Start a long break session
+function startLongBreak() {
+    currentSession = 'Long Break'; // Set the session type to Long Break
+    currentTime = longBreakDuration; // Get long break duration from settings or default
+    updateDisplay(); // Update the timer display
+}
+
+// Update the timer display and title based on current session
+function updateDisplay() {
+    const minutes = Math.floor(currentTime / 60); // Calculate minutes
+    const seconds = currentTime % 60; // Calculate remaining seconds
+
+    // Update the displayed timer
+    document.getElementById('timer-display').textContent = 
+        `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    document.getElementById('timer-title').textContent = currentSession; // Update the session title
+
+    // Only update the browser's title if the timer is running
+    if (isRunning) {
+        document.title = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    } else {
+        document.title = "Study Timer"; // Default title when timer is not running
+    }
+
+    // Update session info
+    const sessionInfo = document.getElementById('session-info');
+
+    // Correct logic for displaying session count
+    if (currentSession === 'Timer') {
+        sessionInfo.textContent = `${sessionCount} of ${sessionsBeforeLongBreak} Sessions`;
+    } else if (currentSession === 'Short Break') {
+        sessionInfo.textContent = `${sessionCount - 1} of ${sessionsBeforeLongBreak} Sessions`;
+    } else if (currentSession === 'Long Break') {
+        sessionInfo.textContent = `${sessionsBeforeLongBreak} of ${sessionsBeforeLongBreak} Sessions`;
+    }
+}
+
+// Update the start/pause button icon based on the timer's running state
+function updateButtonIcon() {
+    const icon = document.getElementById('start-pause-btn').querySelector('i');
+    if (isRunning) {
+        icon.classList.remove('fa-play'); // Remove play icon
+        icon.classList.add('fa-pause'); // Add pause icon
+    } else {
+        icon.classList.remove('fa-pause'); // Remove pause icon
+        icon.classList.add('fa-play'); // Add play icon
+    }
+}
+
+// Get the appropriate break duration
+function getBreakDuration() {
+    if (currentSession === 'Short Break') {
+        return shortBreakDuration; // Return short break duration in seconds
+    } else if (currentSession === 'Long Break') {
+        return longBreakDuration; // Return long break duration in seconds
+    }
+    return startTime; // Return default work duration for Timer session
+}
+
+// ------------------------------------------------------------------
+// 6) RESPOND TO MAIN TIMER EVENTS (FROM tasks.js)
+// ------------------------------------------------------------------
+document.addEventListener('start-task-timer', () => {
+    // No change needed
+    // If a task is active, resume its interval
+    if (activeTaskId) {
+        startActiveTaskInterval();
+    }
+});
+
+document.addEventListener('stop-task-timer', () => {
+    // No change needed
+    // Stop counting time on the active task
+    stopActiveTaskInterval();
+
+    // If there's an active task, update the DB with the new timeSpent
+    if (activeTaskId) {
+        // 1) old total from DB
+        const oldDB = dbTimeSpent[activeTaskId] || 0;
+        // 2) localTime from this session
+        const local = localTime[activeTaskId] || 0;
+        // 3) new total = old + local
+        const newTotal = oldDB + local;
+
+        fetch(`/tasks/${activeTaskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ timeSpent: newTotal })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to update timeSpent');
+            return res.json();
+        })
+        .then(data => {
+            console.log('Updated timeSpent in DB:', data.task.timeSpent);
+            updateTaskTotalTime(data.task._id, data.task.timeSpent);
+        })
+        .catch(err => console.error(err));
+    }
+});
+
+// Reset task timer
+document.addEventListener('reset-task-timer', () => {
+    // No change needed
+    mainTimerRunning = false;
+    stopActiveTaskInterval();
+
+    if (activeTaskId) {
+        // Reset the local time to 0
+        taskTimes[activeTaskId] = 0;
+
+        // Update the local DOM display
+        const activeTask = document.querySelector(`[data-task-id="${activeTaskId}"]`);
+        if (activeTask) {
+            activeTask.querySelector('.task-local-time').textContent = '0m0s';
+        }
+
+        // **NEW**: PUT request to reset timeSpent on the server
+        /*
+        fetch(`/tasks/${activeTaskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ timeSpent: 0 })
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Failed to reset timeSpent in DB');
+            }
+            return res.json();
+        })
+        .then(data => {
+            console.log('Successfully reset task on server:', data.task);
+        })
+        .catch(err => {
+            console.error(err);
+        });
+        */
+    }
+});
+
+// This calls your existing POST /tasks logic:
+  fetch('/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: taskName })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('Failed to create task');
+    return res.json();
+  })
+  .then(data => {
+    console.log('Created task:', data.task);
+    renderTask(data.task);
+    newTaskInput.value = '';
+    addTaskPopup.classList.add('hidden');
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Error creating task');
+  });
+
+
+------------------------------------------------------------------
+function renderTask(task) {
+    // Create outer container
+    const taskItem = document.createElement('div');
+    // Some Tailwind classes for styling:
+    taskItem.className = `
+      task-item bg-white p-4 rounded-lg shadow-md flex justify-between items-center 
+      cursor-pointer relative
+    `;
+    // We store the MongoDB _id
+    // Determine the task ID based on its origin
+    const taskId = isServerTask ? task._id : task.id;
+    taskItem.setAttribute('data-task-id', taskId);
+  
+    // Initialize DB vs. local time
+    dbTimeSpent[task._id] = task.timeSpent || 0;
+    localTime[task._id]    = 0;
+  
+    // Convert total timeSpent to minutes/seconds for display
+    const dbMin = Math.floor(task.timeSpent / 60);
+    const dbSec = task.timeSpent % 60;
+  
+    // We'll build the inner HTML:
+    // Left side: check icon + task name
+    // Right side: local time + total time + 3-dots
+    taskItem.innerHTML = `
+      <div class="flex items-center">
+        <!-- A “check-circle” icon, can be replaced with your own logic -->
+        <i class="fas fa-check-circle text-gray-400"></i>
+        <!-- If name is too long, we can add .truncate or a max-width style -->
+        <span class="ml-2 text-gray-700 font-semibold task-name" 
+              style="max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          ${task.title}
+        </span>
+      </div>
+      <div class="flex items-center space-x-3">
+        <span class="task-local-time text-blue-600 text-sm">Local: 0m0s</span>
+        <span class="task-total-time text-gray-500 text-sm">
+          Total: ${dbMin}m${dbSec}s
+        </span>
+        <!-- 3-dots menu trigger -->
+        <i class="fas fa-ellipsis-v text-gray-400 cursor-pointer three-dots-menu"></i>
+      </div>
+    `;
+  
+    // Append to the #task-list
+    taskList.appendChild(taskItem);
+  
+    // *** (1) Click to toggle selection/unselection
+    taskItem.addEventListener('click', (e) => {
+      // If the user clicked the 3-dots icon, we don't want to toggle select
+      if (e.target.classList.contains('three-dots-menu')) {
+        return; 
+      }
+      if (activeTaskId === task._id) {
+        // if it's currently active, unselect
+        handleUnselectTask(task._id);
+      } else {
+        handleSelectTask(task._id);
+      }
+    });
+  
+    // *** (2) 3-dots menu: create a small popup or dropdown
+    const threeDotsIcon = taskItem.querySelector('.three-dots-menu');
+    threeDotsIcon.addEventListener('click', (e) => {
+      e.stopPropagation(); // so it doesn't toggle selection
+  
+      // Build a simple menu
+      const menu = document.createElement('div');
+      menu.className = `
+        absolute top-10 right-4 bg-white border border-gray-300 
+        rounded shadow-md text-sm z-10 p-2
+      `;
+      
+      // Common actions
+      const deleteLocal = document.createElement('div');
+      deleteLocal.textContent = 'Delete locally';
+      deleteLocal.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1';
+      deleteLocal.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        // do your local delete fetch -> then remove from DOM
+        fetch(`/tasks/${task._id}`, { method: 'DELETE' })
+          .then(res => {
+            if(!res.ok) throw new Error('Failed to delete');
+            taskItem.remove();
+            if (activeTaskId === task._id) {
+              activeTaskId = null;
+              stopActiveTaskInterval();
+            }
+          })
+          .catch(console.error);
+        menu.remove();
+      });
+      menu.appendChild(deleteLocal);
+  
+      if (task.todoistId) {
+        // *** It's a Todoist task => "Complete" and "Delete from Todoist"
+        const complete = document.createElement('div');
+        complete.textContent = 'Mark as completed';
+        complete.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1';
+        complete.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          fetch('/todoist/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taskId: task.todoistId })
+          })
+          .then(res => {
+            if(!res.ok) throw new Error('Failed to complete in Todoist');
+            // remove from UI or visually mark as done
+            taskItem.remove();
+          })
+          .catch(console.error);
+          menu.remove();
+        });
+        menu.appendChild(complete);
+  
+        const deleteTodoist = document.createElement('div');
+        deleteTodoist.textContent = 'Delete from Todoist';
+        deleteTodoist.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1';
+        deleteTodoist.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if(!confirm('Delete from Todoist?')) return;
+          fetch('/todoist/delete', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taskId: task.todoistId })
+          })
+          .then(res => {
+            if(!res.ok) throw new Error('Failed to delete from Todoist');
+            taskItem.remove();
+          })
+          .catch(console.error);
+          menu.remove();
+        });
+        menu.appendChild(deleteTodoist);
+      } else {
+        // *** Non‐Todoist => rename option
+        const rename = document.createElement('div');
+        rename.textContent = 'Rename';
+        rename.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1';
+        rename.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const newName = prompt('Enter new task name:', task.title);
+          if(newName && newName.trim() !== '') {
+            fetch(`/tasks/${task._id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title: newName.trim() })
+            })
+            .then(res => {
+              if(!res.ok) throw new Error('Failed to rename task');
+              return res.json();
+            })
+            .then(updated => {
+              // Update UI
+              taskItem.querySelector('.task-name').textContent = updated.task.title;
+            })
+            .catch(console.error);
+          }
+          menu.remove();
+        });
+        menu.appendChild(rename);
+      }
+  
+      // Attach to the DOM
+      taskItem.appendChild(menu);
+  
+      // If user clicks outside, remove the menu
+      document.addEventListener('click', function docListener() {
+        menu.remove();
+        document.removeEventListener('click', docListener);
+      }, { once: true });
+    });
+  }
+
+
+<header>
+        <nav>
+            <ul>
+                <li><a href="index.html">Timer</a></li>
+                <li><a href="stats.html">Stats</a></li>
+                <li><a href="settings.html">Settings</a></li>
+            </ul>
+            <div id="login-box">
+                <a href="login.html" id="login-link" aria-label="Login">Log in</a>
+            </div>
+        </nav>
+    </header>
+
+<header>
+        <nav>
+            <ul>
+                <li><a href="index.html">Timer</a></li>
+                <li><a href="stats.html">Stats</a></li>
+                <li><a href="settings.html">Settings</a></li>
+            </ul>
+            <div id="login-box">
+                <a href="login.html" id="login-link" aria-label="Login">Log in</a>
+            </div>
+        </nav>
+    </header>

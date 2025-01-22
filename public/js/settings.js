@@ -22,12 +22,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const resetDefaultBtn = document.getElementById('reset-default-btn'); // Reset button
 
     // Function to update the display value next to each slider
-    /*
-    const updateDisplayValue = (slider, display) => {
-        display.textContent = slider.value;
-    };
-    */
-
     const updateDisplayValue = (slider, display) => {
         const unit = slider.id.includes('sessions') ? '' : ' min';
         display.textContent = `${slider.value}${unit}`;
@@ -186,6 +180,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 message.style.marginTop = '10px';
                 settingsForm.appendChild(message);
 
+                // Dispatch 'settings-updated' event
+                document.dispatchEvent(new Event('settings-updated'));
+
+                // Close the modal
+                settingsModal.classList.add('hidden');
+
                 // Remove the message after 3 seconds
                 setTimeout(() => {
                     message.remove();
@@ -216,6 +216,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 message.style.color = 'green';
                 message.style.marginTop = '10px';
                 settingsForm.appendChild(message);
+
+                // Dispatch 'settings-updated' event
+                document.dispatchEvent(new Event('settings-updated'));
+
+                // Close the modal
+                settingsModal.classList.add('hidden');
 
                 // Remove the message after 3 seconds
                 setTimeout(() => {
@@ -269,6 +275,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 message.style.marginTop = '10px';
                 settingsForm.appendChild(message);
 
+                // Dispatch 'settings-updated' event
+                document.dispatchEvent(new Event('settings-updated'));
+
+                // Close the modal
+                settingsModal.classList.add('hidden');
+
                 // Remove the message after 3 seconds
                 setTimeout(() => {
                     message.remove();
@@ -301,6 +313,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 message.style.marginTop = '10px';
                 settingsForm.appendChild(message);
 
+                // Dispatch 'settings-updated' event
+                document.dispatchEvent(new Event('settings-updated'));
+
+                // Close the modal
+                settingsModal.classList.add('hidden');
+
                 // Remove the message after 3 seconds
                 setTimeout(() => {
                     message.remove();
@@ -321,16 +339,43 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     });
+
+    // **Add Event Listeners for Opening and Closing the Settings Modal**
+
+    // Get references to the settings button, close button, and modal
+    const settingsBtn = document.getElementById('settings-btn');
+    const closeSettingsBtn = document.getElementById('close-settings');
+    const settingsModal = document.getElementById('settings-modal');
+
+    // Event listener to open the settings modal
+    settingsBtn.addEventListener('click', async () => {
+        settingsModal.classList.remove('hidden');
+        await loadSettingsBasedOnLogin();
+    });
+
+    // Event listener to close the settings modal
+    closeSettingsBtn.addEventListener('click', () => {
+        settingsModal.classList.add('hidden');
+    });
+
+    // Optionally, you can add an event listener to close the modal when clicking outside of it
+    // For enhanced UX, but this is optional
+    window.addEventListener('click', (event) => {
+        if (event.target === settingsModal) {
+            settingsModal.classList.add('hidden');
+        }
+    });
 });
 
-// In settings.js, after DOMContentLoaded:
+// **Remove or Comment Out the Following Block**
+/*
 document.getElementById('settings-btn').addEventListener('click', async () => {
     document.getElementById('settings-modal').classList.remove('hidden');
     await loadSettingsBasedOnLogin();
-  });
-  document.getElementById('close-settings').addEventListener('click', () => {
+});
+document.getElementById('close-settings').addEventListener('click', () => {
     document.getElementById('settings-modal').classList.add('hidden');
-  });
-  
-// at the end of settings.js
+});
+
 window.loadSettingsBasedOnLogin = loadSettingsBasedOnLogin;
+*/

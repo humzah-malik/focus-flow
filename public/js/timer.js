@@ -21,6 +21,13 @@ let longBreakDuration = 15 * 60; // default 15 minutes
 document.addEventListener('DOMContentLoaded', function () {
     loadSettings(); // Load settings on start
     attachEventListeners(); // Attach event listeners to UI elements
+
+    // Listen for 'settings-updated' event to reload settings
+    document.addEventListener('settings-updated', async () => {
+        await loadSettings(); // Reload settings
+        console.log('Settings updated, timer reloaded.');
+        updateDisplay(); // Update the timer display
+    });
 });
 
 // Attach event listeners to buttons
@@ -244,18 +251,6 @@ function handleSessionCompletion() {
     // Decide whether to auto-start the next session based on settings
     // --- new snippet to handle autoStartAll ---
     if (autoStartAll) {
-        // figure out the next session type
-        /*
-        let nextSessionType;
-        if (currentSession === 'Timer') {
-            // we just ended a Timer
-            nextSessionType = (sessionCount > sessionsBeforeLongBreak) ? 'Long Break' : 'Short Break';
-        } else {
-            // we ended a break
-            nextSessionType = 'Timer';
-        }
-        */
-
         // we do NOT autostart if the next session is the "first Timer in a new cycle"
         // that means (nextSessionType === 'Timer' && sessionCount === 1)
         const nextSessionIsLongBreak = (nextSessionType === 'Long Break');
@@ -263,15 +258,15 @@ function handleSessionCompletion() {
 
         if (nextSessionIsLongBreak) {
             setTimeout(() => {
-              startTimer();
-              updateButtonIcon();
+                startTimer();
+                updateButtonIcon();
             }, 1500);
-          } else if (!isFirstTimerInCycle) {
+        } else if (!isFirstTimerInCycle) {
             setTimeout(() => {
-              startTimer();
-              updateButtonIcon();
+                startTimer();
+                updateButtonIcon();
             }, 1500);
-          }
+        }
     }
 }
 
@@ -427,4 +422,13 @@ document.addEventListener('reset-task-timer', () => {
         });
         */
     }
+});
+
+// **Add Listener for 'settings-updated' Event**
+document.addEventListener('settings-updated', async () => {
+    await loadSettings(); // Reload settings
+    console.log('Settings updated, timer reloaded.');
+    updateDisplay(); // Update the timer display
+    // Optionally, reset the timer if desired
+    // resetTimer();
 });
