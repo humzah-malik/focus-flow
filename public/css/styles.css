@@ -7,6 +7,16 @@ body {
     display: flex; /* Enable a flex container for layout */
 }
 
+button, input {
+    margin: 0;
+    padding: 0;
+    border: none;
+    font: inherit;
+    color: inherit;
+    box-sizing: border-box;
+}
+
+
 /* Styling for the list in the sidebar */
 .sidebar ul {
     list-style-type: none; /* Remove default bullet points */
@@ -472,16 +482,21 @@ body {
 }
 
 /* Style for buttons */
+/* Style for buttons */
 .form-container button {
-    width: 100%;
-    padding: 10px;
+    width: 100%; /* Match input width */
+    box-sizing: border-box; /* Ensure padding is included in the width */
+    padding: 10px; /* Keep consistent with input padding */
+    margin: 0; /* Ensure no additional margin */
     border-radius: 4px;
     border: none;
     background-color: #3182ce; /* Blue */
     color: white;
     font-weight: bold;
-    cursor: pointer;
+    text-align: center;
+    font-size: 16px; /* Match font size with input fields */
 }
+
 
 .form-container button:hover {
     background-color: #2b6cb0; /* Darker blue */
@@ -495,4 +510,166 @@ body {
 
 .form-container a:hover {
     text-decoration: underline;
+}
+
+/* Modal Styling */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5); /* Overlay effect */
+}
+
+.modal-content {
+    background-color: #2d3748; /* Match the page's background */
+    color: white;
+    margin: 10% auto; /* Centered vertically */
+    padding: 20px;
+    border-radius: 10px;
+    width: 50%; /* Moderate width */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #4a5568;
+    padding-bottom: 10px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.modal-body {
+    max-height: 300px; /* Limit height */
+    overflow-y: auto; /* Scrollable content */
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 10px;
+}
+
+.primary-btn {
+    background-color: #3182ce; /* Blue button */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.primary-btn:hover {
+    background-color: #2b6cb0; /* Darker blue on hover */
+}
+
+.task-list {
+    padding: 10px;
+}
+
+.task-list .todoist-task-item {
+    padding: 10px;
+    margin-bottom: 5px;
+    background-color: #4a5568;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.task-list .todoist-task-item:hover {
+    background-color: #2d3748;
+}
+
+.auth-page {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #1a202c; /* Dark gray background */
+    color: #fff; /* White text */
+    display: flex;
+    justify-content: center; /* Horizontally center the container */
+    align-items: center; /* Vertically center the container */
+    height: 100vh; /* Full height of the viewport */
+    overflow: hidden; /* Prevent scrolling */
+}
+
+.auth-page .main-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 400px; /* Limit the width */
+    background-color: #2d3748; /* Slightly lighter gray for form container */
+    padding: 20px 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.auth-page .main-wrapper h1 {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* General styling for the header */
+header {
+    position: relative;
+    z-index: 1000;
+}
+
+/* Buttons inside the nav bar */
+header .flex .px-3 {
+    padding: 0.75rem 1rem; /* Match padding for all buttons */
+    font-size: 1rem;
+    text-align: center;
+}
+
+/* Hide the logout button initially */
+#logout-button.hidden {
+    display: none;
+}
+
+/* Ensure all buttons are consistent in style */
+header button,
+header a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+/* Adjust hover styles */
+header button:hover,
+header a:hover {
+    filter: brightness(1.1);
+}
+
+/* Fix logout button hover styles to match login button */
+#logout-button {
+    background-color: #3182ce; /* Match login button's blue */
+    border: none;
+}
+#logout-button:hover {
+    background-color: #2b6cb0;
 }

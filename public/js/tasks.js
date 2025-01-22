@@ -1248,6 +1248,20 @@ function addTodoistTaskListeners(taskId) {
   });
   */
 
+    /*
+    document.getElementById('close-modal-btn').addEventListener('click', () => {
+      document.getElementById('todoist-task-modal').style.display = 'none';
+  });
+
+  // Optional: Ensure the modal can also close when clicking outside
+  window.addEventListener('click', (event) => {
+      const modal = document.getElementById('todoist-task-modal');
+      if (event.target === modal) {
+          modal.style.display = 'none';
+      }
+  });
+  */
+
   window.updateTaskTotalTime = function updateTaskTotalTime(taskId, totalSeconds) {
     const taskEl = document.querySelector(`[data-task-id="${taskId}"]`);
     if (!taskEl) return;

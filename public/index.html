@@ -25,24 +25,28 @@
     <!-- Updated Header Section -->
     <header class="bg-gray-800 py-4 shadow">
         <div class="container mx-auto flex items-center justify-between px-4">
-        <!-- Left side: App name -->
-        <h1 class="text-2xl font-bold">Focus Flow</h1>
+            <!-- Left side: App name -->
+            <h1 class="text-2xl font-bold">Focus Flow</h1>
     
-        <!-- Right side: Buttons for Stats, Settings, Login/Logout -->
-        <div id="login-box" class="flex space-x-4">
-            <button id="stats-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
-            Stats
-            </button>
-            <button id="settings-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
-            Settings
-            </button>
-            <a id="login-link" href="login.html" 
-            class="px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded">
-            Login
-            </a>
+            <!-- Right side: Buttons for Stats, Settings, Login/Logout -->
+            <div class="flex items-center space-x-4">
+                <button id="stats-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
+                    Stats
+                </button>
+                <button id="settings-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
+                    Settings
+                </button>
+                <a id="login-link" href="login.html" 
+                   class="px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded">
+                    Login
+                </a>
+                <button id="logout-button" 
+                        class="px-3 py-2 bg-red-500 hover:bg-red-600 rounded hidden">
+                    Logout
+                </button>
+            </div>
         </div>
-        </div>
-    </header>  
+    </header>    
   
     <!-- Main content with Timer + Tasks. Use "flex-1" so it grows/shrinks to fill screen. -->
     <main class="flex-1 container mx-auto px-4 py-8">
@@ -135,7 +139,7 @@
         </div>
       </div>
   
-      <!-- Optional: Todoist Task Modal (hidden by default) -->
+      <!-- Optional: Todoist Task Modal (hidden by default) -->  
       <div id="todoist-task-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 
            flex items-center justify-center">
         <div class="bg-white text-black p-6 rounded shadow-md max-w-sm w-full">
@@ -150,7 +154,7 @@
             </button>
           </div>
         </div>
-      </div>
+      </div>  
 
       <!-- Put this somewhere inside <body>, probably near the bottom of your <main> or at the end of <body> -->
     <!-- "Settings" modal inside index.html using your OLD IDs -->

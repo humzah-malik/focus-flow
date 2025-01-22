@@ -742,3 +742,245 @@ function renderTask(task) {
             </div>
         </nav>
     </header>
+
+<div id="todoist-task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Choose Tasks To Import</h3>
+                <button id="close-modal-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="todoist-task-list" class="task-list">
+                    <!-- Task items will be dynamically populated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-import-btn" class="primary-btn">Import Selected</button>
+            </div>
+        </div>
+        </div>
+
+<header class="bg-gray-800 py-4 shadow">
+        <div class="container mx-auto flex items-center justify-between px-4">
+        <!-- Left side: App name -->
+        <h1 class="text-2xl font-bold">Focus Flow</h1>
+    
+        <!-- Right side: Buttons for Stats, Settings, Login/Logout -->
+        <div id="login-box" class="flex space-x-4"> </div>
+            <button id="stats-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
+            Stats
+            </button>
+            <button id="settings-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
+            Settings
+            </button>
+            <a id="login-link" href="login.html" 
+            class="px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded">
+            Login
+            </a>
+        </div>
+    </header>
+
+
+// public/js/auth.js
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const loginLink = document.getElementById("login-link");
+  const logoutButton = document.createElement("button");
+
+  // Style and configure the logout button
+  logoutButton.textContent = "Log Out";
+  logoutButton.style = `
+      display: none; 
+      padding: 10px 20px; 
+      border: none; 
+      background: #dc3545; 
+      color: white; 
+      cursor: pointer; 
+      border-radius: 5px;
+      font-size: 16px;
+  `;
+  logoutButton.id = "logout-button";
+  logoutButton.addEventListener("click", showLogoutConfirmationModal);
+
+  // Append the logout button next to the login link
+  const loginBox = document.getElementById("login-box");
+  loginBox.appendChild(logoutButton);
+
+  try {
+      // Fetch login status from the server
+      const response = await fetch('/check-session');
+      const data = await response.json();
+
+      if (data.loggedIn) {
+          // User is logged in
+          loginLink.style.display = "none";
+          logoutButton.style.display = "inline-block";
+      } else {
+          // User is not logged in
+          loginLink.style.display = "inline-block";
+          logoutButton.style.display = "none";
+      }
+  } catch (error) {
+      console.error('Error checking login status:', error);
+      loginLink.style.display = "inline-block";
+      logoutButton.style.display = "none";
+  }
+
+  // Check if a logout just occurred to display the success popup
+  if (sessionStorage.getItem('logout') === 'success') {
+      showLogoutSuccessPopup();
+      sessionStorage.removeItem('logout');
+  }
+});
+
+// Function to show a logout confirmation modal
+function showLogoutConfirmationModal() {
+  // Create modal overlay
+  const modal = document.createElement("div");
+  modal.id = "logout-modal";
+  modal.style = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+  `;
+
+  // Create modal content container
+  const popup = document.createElement("div");
+  popup.style = `
+      padding: 30px;
+      background: #fff;Flo
+      border-radius: 10px;
+      text-align: center;
+      width: 300px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  `;
+
+  // Confirmation message
+  const message = document.createElement("p");
+  message.textContent = "Are you sure you want to log out?";
+  message.style = "margin-bottom: 20px; font-size: 18px;";
+
+  // Sign Out button
+  const signOutButton = document.createElement("button");
+  signOutButton.textContent = "Sign Out";
+  signOutButton.style = `
+      padding: 10px 20px;
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+  `;
+  /*
+  signOutButton.addEventListener("click", async () => {
+      try {
+          signOutButton.textContent = "Signing out...";
+          signOutButton.disabled = true;
+          const response = await fetch('/logout', { method: 'POST' }); // Changed to POST for security
+          if (response.ok) {
+              sessionStorage.setItem('logout', 'success');
+              window.location.href = 'index.html'; // Redirect to index.html
+          } else {
+              throw new Error('Logout failed');
+          }
+      } catch (error) {
+          console.error('Error logging out:', error.message);
+          alert('Logout failed. Please try again.');
+      }
+  });
+  */
+
+  signOutButton.addEventListener("click", async () => {
+    try {
+      signOutButton.textContent = "Signing out...";
+      signOutButton.disabled = true;
+      
+      const response = await fetch('/logout', { method: 'POST' }); // Ensure method is POST
+      if (response.ok) {
+        sessionStorage.setItem('logout', 'success');
+        window.location.href = 'index.html'; // Redirect to index.html
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Error logging out:', error.message);
+      alert('Logout failed. Please try again.');
+      signOutButton.textContent = "Sign Out"; // Reset button text
+      signOutButton.disabled = false; // Re-enable the button
+    }
+  });
+
+  // Cancel button
+  const cancelButton = document.createElement("button");
+  cancelButton.textContent = "Cancel";
+  cancelButton.style = `
+      padding: 10px 20px;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+  `;
+  cancelButton.addEventListener("click", () => {
+      modal.remove();
+  });
+
+  // Assemble modal content
+  popup.appendChild(message);
+  popup.appendChild(signOutButton);
+  popup.appendChild(cancelButton);
+  modal.appendChild(popup);
+  document.body.appendChild(modal);
+
+  // Close modal when clicking outside the popup
+  modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+          modal.remove();
+      }
+  });
+}
+
+// Function to show a custom logout success popup
+function showLogoutSuccessPopup() {
+  const popup = document.createElement("div");
+  popup.id = "logout-success-popup";
+  popup.style = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      background: #28a745;
+      color: white;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 1001;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      font-size: 16px;
+  `;
+  popup.textContent = "You have logged out successfully.";
+  document.body.appendChild(popup);
+  
+  // Fade-in effect
+  setTimeout(() => {
+      popup.style.opacity = "1";
+  }, 100);
+  
+  // Remove after 3 seconds with fade-out effect
+  setTimeout(() => {
+      popup.style.opacity = "0";
+      setTimeout(() => {
+          popup.remove();
+      }, 500);
+  }, 3000);
+}
