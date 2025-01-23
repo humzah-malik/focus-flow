@@ -752,31 +752,61 @@ function importTodoist() {
         menu.appendChild(deleteAction);
 
         // Additional actions for server tasks (e.g., Rename)
-        if (isServerTask && !task.todoistId) { // Exclude Todoist tasks from Rename
+        if (isServerTask && !task.todoistId || !isServerTask) { // Exclude Todoist tasks from Rename
             const rename = document.createElement('div');
             rename.textContent = 'Rename';
             rename.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1';
             rename.addEventListener('click', () => {
-                const newName = prompt('Enter new task name:', task.title);
-                if(newName && newName.trim() !== '') {
-                    fetch(`/tasks/${task._id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ title: newName.trim() })
-                    })
-                    .then(res => {
-                        if(!res.ok) throw new Error('Failed to rename task');
-                        return res.json();
-                    })
-                    .then(updated => {
-                        // Update UI
-                        taskItem.querySelector('.task-name').textContent = updated.task.title;
-                        console.log(`Task renamed to "${updated.task.title}".`);
-                    })
-                    .catch(err => console.error(err));
-                }
-                menu.remove();
-            });
+              const newName = prompt('Enter new task name:', task.title);
+              if(newName && newName.trim() !== '') {
+                  if (isServerTask && !task.todoistId) {
+                      // **Rename Server Task**
+                      fetch(`/tasks/${task._id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ title: newName.trim() })
+                      })
+                      .then(res => {
+                          if(!res.ok) throw new Error('Failed to rename task');
+                          return res.json();
+                      })
+                      .then(updated => {
+                          // Update UI
+                          taskItem.querySelector('.task-name').textContent = updated.task.title;
+                          console.log(`Task renamed to "${updated.task.title}".`);
+                      })
+                      .catch(err => {
+                          console.error(err);
+                          alert('Failed to rename task on server.');
+                      });
+                  } else {
+                      // **Rename Local Task**
+                      try {
+                          // Retrieve local tasks from localStorage
+                          const localTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                          
+                          // Find and update the specific task
+                          const updatedTasks = localTasks.map(t => {
+                              if (t.id === task.id) {
+                                  return { ...t, title: newName.trim() };
+                              }
+                              return t;
+                          });
+                          
+                          // Save the updated tasks back to localStorage
+                          localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+                          
+                          // Update the UI
+                          taskItem.querySelector('.task-name').textContent = newName.trim();
+                          console.log(`Local task renamed to "${newName.trim()}".`);
+                      } catch (error) {
+                          console.error('Failed to rename local task:', error);
+                          alert('Failed to rename local task.');
+                      }
+                  }
+              }
+              menu.remove();
+          });          
             menu.appendChild(rename);
         }
 
@@ -1302,29 +1332,5 @@ function addTodoistTaskListeners(taskId) {
         });
         localStorage.setItem('tasks', JSON.stringify(updatedTasks));
     }
-  }
-
-// On page load, fetch tasks from server
-// On page load, fetch tasks from server
-fetch('/tasks', {
-    method: 'GET',
-    headers: {
-    'Content-Type': 'application/json'
-    }
-})
-.then(res => {
-    if (!res.ok) {
-    // If user not authenticated or error
-    throw new Error('Failed to fetch tasks');
-    }
-    return res.json();
-})
-.then(tasks => {
-    console.log('Tasks from server:', tasks);
-    // Render each task into the DOM
-    tasks.forEach(task => {
-    renderTask(task);
-    });
-})
-.catch(err => console.error(err));  
+  } 
 });

@@ -60,26 +60,19 @@
         <div class="w-64 h-64 mx-auto relative mb-4">
           <svg id="timer-circle-svg" class="absolute inset-0" viewBox="0 0 100 100">
             <!-- Full circle background -->
-            <circle cx="50" cy="50" r="45" stroke="#4B5563" stroke-width="10" fill="none" />
-      
-            <!-- Elapsed time circle -->
+            <circle cx="50" cy="50" r="45" stroke="#D97706" stroke-width="10" fill="none" />
+          
+            <!-- Elapsed time circle (Purple) -->
             <circle id="elapsed-circle" 
                     cx="50" cy="50" r="45" 
-                    stroke="#D97706" stroke-width="10" 
+                    stroke="#7C3AED" stroke-width="10" 
                     fill="none" 
                     stroke-dasharray="282.743" 
                     stroke-dashoffset="282.743" 
-                    stroke-linecap="round" />
-      
-            <!-- Remaining time circle -->
-            <circle id="remaining-circle" 
-                    cx="50" cy="50" r="45" 
-                    stroke="#7C3AED" stroke-width="10"
-                    fill="none" 
-                    stroke-dasharray="282.743" 
-                    stroke-dashoffset="282.743" 
-                    stroke-linecap="round" />
+                    stroke-linecap="round" 
+                    transform="rotate(-90 50 50)"/>
           </svg>
+          
           <!-- Time display in the center -->
           <div id="timer-display" class="absolute inset-0 flex items-center justify-center text-4xl">
             25:00
@@ -263,7 +256,6 @@
     <script src="js/timer.js"></script>
     <script src="js/tasks.js"></script>
     <script src="js/auth.js"></script>
-    <script src="session.js"></script>
     <script type="module"src="js/settings.js"></script> <!-- <== Add this if missing -->
     <!-- near the bottom of index.html, right before </body> -->
      <!-- near bottom of index.html -->

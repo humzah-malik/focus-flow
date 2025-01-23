@@ -26,23 +26,28 @@ const totalDashArray = 282.743; // Circumference of the circle (2 * Math.PI * 45
 elapsedCircle.style.strokeDasharray = totalDashArray;
 elapsedCircle.style.strokeDashoffset = totalDashArray;
 
-remainingCircle.style.strokeDasharray = totalDashArray;
-remainingCircle.style.strokeDashoffset = totalDashArray;
+//remainingCircle.style.strokeDasharray = totalDashArray;
+//remainingCircle.style.strokeDashoffset = totalDashArray;
 
 // *** Function to Update SVG Circles ***
+
 function updateCircles() {
-    const progress = (startTime - currentTime) / startTime; // Progress ratio (0 to 1)
+    let sessionDuration = startTime;
+    if (currentSession === 'Short Break') {
+        sessionDuration = shortBreakDuration;
+    } else if (currentSession === 'Long Break') {
+        sessionDuration = longBreakDuration;
+    }
 
-    // Calculate new dashoffsets
+    const progress = currentTime / sessionDuration;
+
+    //const remainingOffset = totalDashArray * progress;
     const elapsedOffset = totalDashArray * (1 - progress);
-    const remainingOffset = totalDashArray * progress;
 
-    // Update elapsed circle (beige-pinkish color)
+    //remainingCircle.style.strokeDashoffset = remainingOffset;
     elapsedCircle.style.strokeDashoffset = elapsedOffset;
-
-    // Update remaining circle (purple color)
-    remainingCircle.style.strokeDashoffset = remainingOffset;
 }
+
 
 // Call updateCircles initially to set the correct state
 updateCircles();
@@ -178,6 +183,7 @@ function startTimer() {
             handleSessionCompletion();
         }
         updateDisplay();
+        updateCircles(); // Ensure circles are updated every second
     }, 1000);
     updateButtonIcon();
 
@@ -208,6 +214,7 @@ function resetTimer() {
 
     // Reset the main timer's time
     currentTime = currentSession === 'Timer' ? startTime : getBreakDuration();
+    updateCircles(); // Reset circle offsets
     updateDisplay();
     updateButtonIcon();
 
@@ -241,6 +248,7 @@ function skipToBreak() {
         }
     }
 
+    elapsedCircle.style.strokeDashoffset = totalDashArray; // Reset elapsed circle
     updateDisplay(); // Update the timer display
     updateButtonIcon(); // Update the button icon to reflect state
 }
@@ -312,6 +320,9 @@ function startShortBreak() {
     currentSession = 'Short Break'; // Set the session type to Short Break
     currentTime = shortBreakDuration; // Get short break duration from settings or default
     updateDisplay(); // Update the timer display
+    // Ensure circles are properly reset
+    elapsedCircle.style.strokeDashoffset = totalDashArray; // Reset elapsed circle
+    //remainingCircle.style.strokeDashoffset = totalDashArray; // Reset remaining circle
 }
 
 // Start a long break session
@@ -319,6 +330,10 @@ function startLongBreak() {
     currentSession = 'Long Break'; // Set the session type to Long Break
     currentTime = longBreakDuration; // Get long break duration from settings or default
     updateDisplay(); // Update the timer display
+
+    // Ensure circles are reset
+    elapsedCircle.style.strokeDashoffset = totalDashArray; // Reset elapsed circle
+    //remainingCircle.style.strokeDashoffset = totalDashArray; // Reset remaining circle
 }
 
 // Update the timer display and title based on current session

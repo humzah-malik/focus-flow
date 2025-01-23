@@ -984,3 +984,46 @@ function showLogoutSuccessPopup() {
       }, 500);
   }, 3000);
 }
+
+/* Apply the same background color to all pages */
+body {
+    background-color: #1a202c; /* Dark gray (matches bg-gray-900) */
+    color: #fff; /* White text */
+}
+
+<!-- Remaining time circle (Orange) -->
+            <circle id="remaining-circle" 
+                    cx="50" cy="50" r="45" 
+                    stroke="#7C3AED" stroke-width="10"
+                    fill="none"
+                    stroke-dasharray="282.743" 
+                    stroke-dashoffset="282.743" 
+                    stroke-linecap="round" 
+                    transform="rotate(-90 50 50)"/>
+
+
+// On page load, fetch tasks from server
+// On page load, fetch tasks from server
+fetch('/tasks', {
+    method: 'GET',
+    headers: {
+    'Content-Type': 'application/json'
+    }
+})
+.then(res => {
+    if (!res.ok) {
+    // If user not authenticated or error
+    throw new Error('Failed to fetch tasks');
+    }
+    return res.json();
+})
+.then(tasks => {
+    console.log('Tasks from server:', tasks);
+    // Render each task into the DOM
+    tasks.forEach(task => {
+    renderTask(task);
+    });
+})
+.catch(err => console.error(err)); 
+
+<script src="session.js"></script>

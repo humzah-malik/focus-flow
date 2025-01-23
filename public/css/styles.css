@@ -1,10 +1,11 @@
 /* Base styling for the body element */
 body {
-    font-family: 'Arial', sans-serif; /* Use Arial or fallback to a sans-serif font */
-    margin: 0; /* Remove default margin */
-    padding: 0; /* Remove default padding */
-    background-color: #fff; /* Set background color to white */
-    display: flex; /* Enable a flex container for layout */
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #1a202c; /* Dark gray */
+    color: #fff;
+    display: flex;
 }
 
 button, input {
@@ -418,7 +419,8 @@ nav ul li a.active {
 }
 
 #timer-circle-svg {
-    transform: rotate(-90deg);
+    /* Remove the rotation to prevent double rotation */
+    /* transform: rotate(-90deg); */
     width: 100%;
     height: 100%;
 }
@@ -435,13 +437,6 @@ nav ul li a.active {
 .selected-task {
     border-left: 4px solid black !important;
   }  
-
-
-/* Apply the same background color to all pages */
-body {
-    background-color: #1a202c; /* Dark gray (matches bg-gray-900) */
-    color: #fff; /* White text */
-}
 
 /* Center the main content vertically */
 .main-content {
@@ -675,18 +670,23 @@ header a:hover {
 }
 
 /* Position elapsed-circle below remaining-circle */
-#elapsed-circle {
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
-  }
-  
-  #remaining-circle {
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
-  }  
-
 /* Smooth transition for SVG circles */
-#elapsed-circle,
+
+/* Ensure elapsed-circle is above remaining-circle */
 #remaining-circle {
-  transition: stroke-dashoffset 1s linear;
+    /* Remove position absolute if not necessary */
+    /* position: absolute; */
+    /* z-index: 0; */  /* Not needed */
+    /*transform: rotate(-90deg);
+    transform-origin: 50% 50%;*/
+    transition: stroke-dashoffset 1s linear;
+}
+
+#elapsed-circle {
+    /* Remove position absolute if not necessary */
+    /* position: absolute; */
+    /* z-index: 1; */  /* Not needed */
+    /*transform: rotate(-90deg);
+    transform-origin: 50% 50%;*/
+    transition: stroke-dashoffset 1s linear;
 }
