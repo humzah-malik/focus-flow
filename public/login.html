@@ -35,9 +35,6 @@
                 body: JSON.stringify({ email, password }),
             });
 
-            const message = await response.text();
-            alert(message);
-
             if (response.ok) {
                 window.location.href = 'index.html';
             }

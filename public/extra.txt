@@ -1027,3 +1027,7 @@ fetch('/tasks', {
 .catch(err => console.error(err)); 
 
 <script src="session.js"></script>
+
+
+const message = await response.text();
+            alert(message);

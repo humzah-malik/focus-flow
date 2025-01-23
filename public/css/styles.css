@@ -690,3 +690,20 @@ header a:hover {
     transform-origin: 50% 50%;*/
     transition: stroke-dashoffset 1s linear;
 }
+
+/* Ensure that all text within the three-dots menu is black */
+
+/* Style for the menu container */
+.tasks-popup-menu {
+    color: #000; /* Black text for the entire menu */
+}
+
+/* Style for each menu option */
+.tasks-popup-menu div {
+    color: #000; /* Black text for each menu item */
+}
+
+/* Maintain black text color on hover */
+.tasks-popup-menu div:hover {
+    color: #000; /* Black text when hovered */
+}

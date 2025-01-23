@@ -548,6 +548,14 @@ function importTodoist() {
         if (e.target.closest('.check-circle-btn') || e.target.closest('.three-dots-menu-btn')) {
             return; 
         }
+
+        // Check if the task is completed
+        const isCompleted = taskItem.querySelector('.task-name').classList.contains('line-through');
+        if (isCompleted) {
+            alert('Cannot select a completed task. Please uncomplete it first.');
+            return;
+        }
+
         if (activeTaskId === taskId) {
             // If already active, unselect
             handleUnselectTask(taskId);
@@ -584,6 +592,20 @@ function importTodoist() {
             checkIcon.classList.add('text-gray-400');
             taskItem.querySelector('.task-name').classList.remove('line-through', 'text-gray-400');
         }
+
+        // **New: Handle Time Accumulation Based on Completion Status**
+        if (newCompletedStatus) {
+          // If the completed task is currently active, stop its timer
+          if (activeTaskId === taskId) {
+              stopActiveTaskInterval();
+              activeTaskId = null; // Clear active task
+              const selectedTask = document.querySelector(`[data-task-id="${taskId}"]`);
+              if (selectedTask) {
+                  selectedTask.classList.remove('selected-task');
+                  selectedTask.style.borderLeft = 'none';
+              }
+          }
+      }
 
         // Update the task's completed status in the data model
         if (isServerTask) {
@@ -684,14 +706,14 @@ function importTodoist() {
         // Build a simple menu
         const menu = document.createElement('div');
         menu.className = `
-            tasks-popup-menu absolute top-10 right-4 bg-white border border-gray-300 
+            tasks-popup-menu absolute top-10 right-4 bg-white border border-gray-300 text-black
             rounded shadow-md text-sm z-10 p-2
         `;
         
         // Unified Delete Action
         const deleteAction = document.createElement('div');
         deleteAction.textContent = 'Delete';
-        deleteAction.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1';
+        deleteAction.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1 text-black';
         deleteAction.addEventListener('click', () => {
             if (task.todoistId) {
                 // For Todoist tasks, prompt confirmation
@@ -755,9 +777,11 @@ function importTodoist() {
         if (isServerTask && !task.todoistId || !isServerTask) { // Exclude Todoist tasks from Rename
             const rename = document.createElement('div');
             rename.textContent = 'Rename';
-            rename.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1';
+            rename.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1 text-black';
             rename.addEventListener('click', () => {
-              const newName = prompt('Enter new task name:', task.title);
+              // **Modified:** Fetch the latest task title from the DOM
+              const currentTitle = taskItem.querySelector('.task-name').textContent;
+              const newName = prompt('Enter new task name:', currentTitle);
               if(newName && newName.trim() !== '') {
                   if (isServerTask && !task.todoistId) {
                       // **Rename Server Task**
@@ -804,7 +828,9 @@ function importTodoist() {
                           alert('Failed to rename local task.');
                       }
                   }
-              }
+              } else {
+                alert('Task name cannot be empty.');
+            }
               menu.remove();
           });          
             menu.appendChild(rename);
@@ -873,6 +899,16 @@ function importTodoist() {
   // ------------------------------------------------------------------
 
   function handleSelectTask(taskId) {
+
+    // Check if the task is completed
+    const taskEl = document.querySelector(`[data-task-id="${taskId}"]`);
+    const isCompleted = taskEl.querySelector('.task-name').classList.contains('line-through');
+
+    if (isCompleted) {
+        alert('Cannot select a completed task.');
+        return;
+    }
+
     // If main timer is running + we have a different active task => confirm switch
     if (mainTimerRunning && activeTaskId && activeTaskId !== taskId) {
       const confirmSwitch = confirm('Timer is running. Switch tasks?');
