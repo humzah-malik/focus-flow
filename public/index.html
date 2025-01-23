@@ -61,13 +61,23 @@
           <svg id="timer-circle-svg" class="absolute inset-0" viewBox="0 0 100 100">
             <!-- Full circle background -->
             <circle cx="50" cy="50" r="45" stroke="#4B5563" stroke-width="10" fill="none" />
-            <!-- Progress circle (we can animate stroke-dashoffset in JS) -->
-            <circle id="progress-circle" 
+      
+            <!-- Elapsed time circle -->
+            <circle id="elapsed-circle" 
+                    cx="50" cy="50" r="45" 
+                    stroke="#D97706" stroke-width="10" 
+                    fill="none" 
+                    stroke-dasharray="282.743" 
+                    stroke-dashoffset="282.743" 
+                    stroke-linecap="round" />
+      
+            <!-- Remaining time circle -->
+            <circle id="remaining-circle" 
                     cx="50" cy="50" r="45" 
                     stroke="#7C3AED" stroke-width="10"
                     fill="none" 
                     stroke-dasharray="282.743" 
-                    stroke-dashoffset="0" 
+                    stroke-dashoffset="282.743" 
                     stroke-linecap="round" />
           </svg>
           <!-- Time display in the center -->

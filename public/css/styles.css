@@ -673,3 +673,20 @@ header a:hover {
 #logout-button:hover {
     background-color: #2b6cb0;
 }
+
+/* Position elapsed-circle below remaining-circle */
+#elapsed-circle {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+  
+  #remaining-circle {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }  
+
+/* Smooth transition for SVG circles */
+#elapsed-circle,
+#remaining-circle {
+  transition: stroke-dashoffset 1s linear;
+}

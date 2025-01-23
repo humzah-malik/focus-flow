@@ -17,6 +17,36 @@ let autoStartAll = false;
 let shortBreakDuration = 5 * 60; // default 5 minutes
 let longBreakDuration = 15 * 60; // default 15 minutes
 
+// *** New Variables for SVG Circles ***
+const elapsedCircle = document.getElementById('elapsed-circle');
+const remainingCircle = document.getElementById('remaining-circle');
+const totalDashArray = 282.743; // Circumference of the circle (2 * Math.PI * 45)
+
+// *** Initialization of SVG Circles ***
+elapsedCircle.style.strokeDasharray = totalDashArray;
+elapsedCircle.style.strokeDashoffset = totalDashArray;
+
+remainingCircle.style.strokeDasharray = totalDashArray;
+remainingCircle.style.strokeDashoffset = totalDashArray;
+
+// *** Function to Update SVG Circles ***
+function updateCircles() {
+    const progress = (startTime - currentTime) / startTime; // Progress ratio (0 to 1)
+
+    // Calculate new dashoffsets
+    const elapsedOffset = totalDashArray * (1 - progress);
+    const remainingOffset = totalDashArray * progress;
+
+    // Update elapsed circle (beige-pinkish color)
+    elapsedCircle.style.strokeDashoffset = elapsedOffset;
+
+    // Update remaining circle (purple color)
+    remainingCircle.style.strokeDashoffset = remainingOffset;
+}
+
+// Call updateCircles initially to set the correct state
+updateCircles();
+
 // Load settings and attach event listeners
 document.addEventListener('DOMContentLoaded', function () {
     loadSettings(); // Load settings on start
@@ -319,6 +349,8 @@ function updateDisplay() {
     } else if (currentSession === 'Long Break') {
         sessionInfo.textContent = `${sessionsBeforeLongBreak} of ${sessionsBeforeLongBreak} Sessions`;
     }
+
+    updateCircles();
 }
 
 // Update the start/pause button icon based on the timer's running state
