@@ -8,6 +8,8 @@ const authRoutes = require('./server/routes/auth'); // Import authentication rou
 const taskRoutes = require('./server/routes/tasks');
 const todoistRoutes = require('./server/routes/todoist');
 const settingsRoutes = require('./server/routes/settings'); // Add this line
+const statsRoutes = require('./server/routes/stats');
+
 require('dotenv').config(); // Load environment variables from .env
 
 // Initialize the app
@@ -31,6 +33,7 @@ app.use(passport.session());
 
 app.use('/tasks', taskRoutes);
 app.use('/settings', settingsRoutes);
+app.use('/stats', statsRoutes); // mount at /stats
 
 // Protect stats.html
 app.get('/stats.html', ensureAuthenticated, (req, res) => {

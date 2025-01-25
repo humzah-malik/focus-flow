@@ -8,6 +8,8 @@ let isRunning = false; // Boolean to track whether the timer is running
 let currentSession = 'Timer'; // Tracks the current session type: 'Timer', 'Short Break', or 'Long Break'
 let sessionCount = 1; // Tracks the number of completed work sessions
 let sessionsBeforeLongBreak = 4; // Default number of work sessions before a long break
+let activeFocusSessionId = null; // Will hold the _id of the FocusSession in the DB
+let sessionStartTimestamp = null; // For fallback if needed
 
 // Variables to hold auto-start settings
 // Single auto-start setting
@@ -170,9 +172,32 @@ function toggleTimer() {
 }
 
 // Start or continue the timer
-function startTimer() {
+async function startTimer() {
     if (timerInterval) return;
     isRunning = true;
+
+    // CREATE a new FocusSession if the user is logged in
+    const loggedIn = await isLoggedIn();
+    if (loggedIn && currentSession === 'Timer') {
+        try {
+        // If we have an activeTaskId from tasks.js, we can pass it
+        const taskId = window.activeTaskId || null;
+
+        const res = await fetch('/stats/focus-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ taskId })
+        });
+        if (!res.ok) throw new Error('Failed to start FocusSession');
+        const data = await res.json();
+        activeFocusSessionId = data._id;     // store new session ID
+        sessionStartTimestamp = data.startTime; // store the start time
+        } catch (err) {
+        console.error('Error creating FocusSession:', err);
+        }
+    }
+
     timerInterval = setInterval(() => {
         currentTime--;
         if (currentTime <= 0) {
@@ -180,6 +205,7 @@ function startTimer() {
             clearInterval(timerInterval);
             timerInterval = null;
             isRunning = false;
+            finalizeFocusSession();
             handleSessionCompletion();
         }
         updateDisplay();
@@ -199,6 +225,9 @@ function pauseTimer() {
     timerInterval = null;
     isRunning = false;
     updateButtonIcon();
+
+    // If we have an activeFocusSessionId, send PUT to finalize the current session so far
+    finalizeFocusSession(); // We'll define a helper below
 
     // Dispatch stop-task-timer only if currentSession is 'Timer'
     if (currentSession === 'Timer') {
@@ -479,3 +508,23 @@ document.addEventListener('settings-updated', async () => {
     // Optionally, reset the timer if desired
     // resetTimer();
 });
+
+async function finalizeFocusSession() {
+    if (!activeFocusSessionId) return; // no session to finalize
+    try {
+      const res = await fetch(`/stats/focus-session/${activeFocusSessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({})
+      });
+      if (!res.ok) throw new Error('Failed to finalize session');
+      console.log('FocusSession finalized');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      // Reset the activeFocusSessionId so we don't double-update
+      activeFocusSessionId = null;
+    }
+  }
+  

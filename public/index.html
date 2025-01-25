@@ -8,21 +8,18 @@
     <!-- Ensures the page is responsive and scales well on all devices -->
     <title>Study Timer</title>
     <!-- Sets the title of the webpage -->
+    
+    <!-- Tailwind + FontAwesome + SortableJS -->
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Include SortableJS (before tasks.js) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
-    <!-- Links to the custom stylesheet for styling the page -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Includes Font Awesome for icons used in buttons -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Example: Material Web slider & switch via UNPKG (experimental) --> 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />  
+
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col">
 
-    <!-- Start a top container or nav bar (not fixed). 
-         We'll do a simple "flex justify-between" approach. -->
-    <!-- Updated Header Section -->
+    <!-- Header / Nav -->
     <header class="bg-gray-800 py-4 shadow">
         <div class="container mx-auto flex items-center justify-between px-4">
             <!-- Left side: App name -->
@@ -48,20 +45,18 @@
         </div>
     </header>    
   
-    <!-- Main content with Timer + Tasks. Use "flex-1" so it grows/shrinks to fill screen. -->
+    <!-- Main content with Timer + Tasks -->
     <main class="flex-1 container mx-auto px-4 py-8">
       
       <!-- Timer container -->
       <div class="mx-auto mb-8 p-6 bg-gray-800 rounded shadow max-w-xl text-center">
         <h2 id="timer-title" class="text-xl font-bold mb-4">Timer</h2>
   
-        <!-- Example of a circular timer using Tailwind. 
-             We'll place the time in the center of an SVG circle. -->
+        <!-- Circular Timer SVG -->
         <div class="w-64 h-64 mx-auto relative mb-4">
           <svg id="timer-circle-svg" class="absolute inset-0" viewBox="0 0 100 100">
             <!-- Full circle background -->
             <circle cx="50" cy="50" r="45" stroke="#D97706" stroke-width="10" fill="none" />
-          
             <!-- Elapsed time circle (Purple) -->
             <circle id="elapsed-circle" 
                     cx="50" cy="50" r="45" 
@@ -72,7 +67,6 @@
                     stroke-linecap="round" 
                     transform="rotate(-90 50 50)"/>
           </svg>
-          
           <!-- Time display in the center -->
           <div id="timer-display" class="absolute inset-0 flex items-center justify-center text-4xl">
             25:00
@@ -157,97 +151,139 @@
             </button>
           </div>
         </div>
-      </div>  
+      </div>
 
-      <!-- Put this somewhere inside <body>, probably near the bottom of your <main> or at the end of <body> -->
-    <!-- "Settings" modal inside index.html using your OLD IDs -->
-    <div 
-    id="settings-modal" 
-    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    >
-    <div class="bg-gray-900 p-6 rounded shadow-md max-w-md w-full relative">
-        <!-- Close button -->
-        <button id="close-settings" class="absolute top-2 right-2 text-2xl text-white">&times;</button>
-        
-        <h2 class="text-xl font-bold mb-4 text-white">Settings</h2>
+      <!-- Settings Modal -->
+      <div 
+        id="settings-modal" 
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      >
+        <div class="bg-gray-900 p-6 rounded shadow-md max-w-md w-full relative">
+            <!-- Close button -->
+            <button id="close-settings" class="absolute top-2 right-2 text-2xl text-white">&times;</button>
+            
+            <h2 class="text-xl font-bold mb-4 text-white">Settings</h2>
 
-        <!-- WORK DURATION -->
-        <label for="work-duration-slider" class="block mb-1 text-white">
-        Work Duration (minutes)
-        </label>
-        <input
-        id="work-duration-slider"
-        type="range"
-        min="5" max="60" step="1" value="25"
-        class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
-        />
-        <span id="work-duration-value" class="text-white text-sm">25 min</span>
+            <!-- WORK DURATION -->
+            <label for="work-duration-slider" class="block mb-1 text-white">
+              Work Duration (minutes)
+            </label>
+            <input
+              id="work-duration-slider"
+              type="range"
+              min="5" max="60" step="1" value="25"
+              class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
+            />
+            <span id="work-duration-value" class="text-white text-sm">25 min</span>
 
-        <!-- SHORT BREAK -->
-        <label for="short-break-slider" class="block mb-1 text-white mt-4">
-        Short Break (minutes)
-        </label>
-        <input
-        id="short-break-slider"
-        type="range"
-        min="1" max="30" step="1" value="5"
-        class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
-        />
-        <span id="short-break-value" class="text-white text-sm">5 min</span>
+            <!-- SHORT BREAK -->
+            <label for="short-break-slider" class="block mb-1 text-white mt-4">
+              Short Break (minutes)
+            </label>
+            <input
+              id="short-break-slider"
+              type="range"
+              min="1" max="30" step="1" value="5"
+              class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
+            />
+            <span id="short-break-value" class="text-white text-sm">5 min</span>
 
-        <!-- LONG BREAK -->
-        <label for="long-break-slider" class="block mb-1 text-white mt-4">
-        Long Break (minutes)
-        </label>
-        <input
-        id="long-break-slider"
-        type="range"
-        min="1" max="60" step="1" value="15"
-        class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
-        />
-        <span id="long-break-value" class="text-white text-sm">15 min</span>
+            <!-- LONG BREAK -->
+            <label for="long-break-slider" class="block mb-1 text-white mt-4">
+              Long Break (minutes)
+            </label>
+            <input
+              id="long-break-slider"
+              type="range"
+              min="1" max="60" step="1" value="15"
+              class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
+            />
+            <span id="long-break-value" class="text-white text-sm">15 min</span>
 
-        <!-- SESSIONS -->
-        <label for="sessions-slider" class="block mb-1 text-white mt-4">
-        Sessions before Long Break
-        </label>
-        <input
-        id="sessions-slider"
-        type="range"
-        min="1" max="10" step="1" value="4"
-        class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
-        />
-        <span id="sessions-value" class="text-white text-sm">4</span>
+            <!-- SESSIONS -->
+            <label for="sessions-slider" class="block mb-1 text-white mt-4">
+              Sessions before Long Break
+            </label>
+            <input
+              id="sessions-slider"
+              type="range"
+              min="1" max="10" step="1" value="4"
+              class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
+            />
+            <span id="sessions-value" class="text-white text-sm">4</span>
 
-        <!-- AUTOSTART TOGGLE -->
-        <label class="block mb-1 mt-4 text-white">Autostart</label>
-        <label class="inline-flex relative items-center cursor-pointer mb-4">
-        <input type="checkbox" id="auto-start-all" class="sr-only peer" />
-        <div class="
-            w-11 h-6 bg-gray-200 rounded-full peer
-            peer-checked:bg-purple-600
-            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-            after:bg-white after:border-gray-300 after:border after:rounded-full
-            after:h-5 after:w-5 after:transition-all
-            peer-checked:after:translate-x-5 peer-checked:after:border-white
-        ">
+            <!-- AUTOSTART TOGGLE -->
+            <label class="block mb-1 mt-4 text-white">Autostart</label>
+            <label class="inline-flex relative items-center cursor-pointer mb-4">
+              <input type="checkbox" id="auto-start-all" class="sr-only peer" />
+              <div class="
+                  w-11 h-6 bg-gray-200 rounded-full peer
+                  peer-checked:bg-purple-600
+                  after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                  after:bg-white after:border-gray-300 after:border after:rounded-full
+                  after:h-5 after:w-5 after:transition-all
+                  peer-checked:after:translate-x-5 peer-checked:after:border-white
+              "></div>
+            </label>
+
+            <!-- Save / Reset Buttons -->
+            <form id="settings-form" class="mt-4 flex space-x-2 justify-end">
+              <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded">
+                  Save
+              </button>
+              <button type="button" id="reset-default-btn" class="px-4 py-2 border rounded text-white border-white">
+                  Reset
+              </button>
+            </form>
         </div>
-        </label>
+      </div>
 
-        <!-- Save / Reset Buttons -->
-        <form id="settings-form" class="mt-4 flex space-x-2 justify-end">
-        <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded">
-            Save
-        </button>
-        <button type="button" id="reset-default-btn" class="px-4 py-2 border rounded text-white border-white">
-            Reset
-        </button>
-        </form>
-    </div>
-    </div>
+      <!-- ********** UPDATED Stats Modal ********** -->
+      <div
+      id="stats-modal-2" 
+      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      >
+      <!-- 
+        max-w-xl = “limit the container’s width to ~36rem (about 576px)”
+        max-h-[80vh] = “max height at 80% of viewport”
+        overflow-y-auto = “scroll if content is taller than 80% of viewport”
+      -->
+      <div class="bg-gray-900 text-white p-6 rounded shadow-md w-full max-w-xl max-h-[80vh] overflow-y-auto relative">
+        <!-- Close button at top right -->
+        <button id="close-stats" class="absolute top-2 right-2 text-2xl">&times;</button>
+        
+        <h2 class="text-2xl mb-4">Weekly Stats</h2>
+
+        <!-- Day-by-Day Usage Bar Chart -->
+        <div class="mb-8">
+          <h3 class="text-xl mb-2">Focus Hours (Past 7 Days)</h3>
+          <!-- 
+            If you want the chart even smaller, wrap it in a 
+            container with fixed width/height (like w-64 h-32).
+          -->
+          <div class="mx-auto" style="max-width: 400px;">
+            <canvas id="dayChart" width="400" height="200"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Tasks Pie Chart -->
+        <div class="mb-8">
+          <h3 class="text-xl mb-2">Top Tasks</h3>
+          <div class="mx-auto" style="max-width: 400px;">
+            <canvas id="taskChart" width="400" height="200"></canvas>
+          </div>
+        </div>
+
+        <!-- Place to show ALL tasks used -->
+        <div id="weekly-tasks" class="mb-4">
+          <!-- The table or “No tasks found” message is inserted by stats.js -->
+        </div>
+      </div>
+      </div>
+      <!-- ************************************* -->
+
     </main>
   
-    <!-- If you want a footer, place it here -->
     <footer class="bg-gray-800 py-4 text-center text-sm text-gray-400">
       &copy; 2023 Focus Flow
     </footer>
@@ -256,29 +292,30 @@
     <script src="js/timer.js"></script>
     <script src="js/tasks.js"></script>
     <script src="js/auth.js"></script>
-    <script type="module"src="js/settings.js"></script> <!-- <== Add this if missing -->
-    <!-- near the bottom of index.html, right before </body> -->
-     <!-- near bottom of index.html -->
-    <!--  
+    <script type="module" src="js/settings.js"></script>
+
+    <!-- Load Chart.js (for stats) + your stats.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/stats.js"></script>
+
+    <!-- Script to open/close the Stats modal -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-        const settingsBtn   = document.getElementById('settings-btn');
-        const settingsModal = document.getElementById('settings-modal');
-        const closeSettings = document.getElementById('close-settings');
-    
-        settingsBtn.addEventListener('click', async () => {
-            settingsModal.classList.remove('hidden');
-            // call loadSettingsBasedOnLogin() from settings.js if needed
-            if (window.loadSettingsBasedOnLogin) {
-            await window.loadSettingsBasedOnLogin();
-            }
-        });
-    
-        closeSettings.addEventListener('click', () => {
-            settingsModal.classList.add('hidden');
-        });
-        });
+      const statsBtn2 = document.getElementById('stats-btn');
+      const statsModal2 = document.getElementById('stats-modal-2');
+      const closeStatsBtn = document.getElementById('close-stats');
+
+      statsBtn2.addEventListener('click', () => {
+        statsModal2.classList.remove('hidden');
+        // Load stats from /stats/weekly
+        if (window.loadWeeklyStats) {
+          window.loadWeeklyStats();
+        }
+      });
+
+      closeStatsBtn.addEventListener('click', () => {
+        statsModal2.classList.add('hidden');
+      });
     </script>
-    -->
-  </body>
+
+</body>
 </html>

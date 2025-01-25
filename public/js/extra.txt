@@ -1,0 +1,62 @@
+function buildDayChart(dailyData) {
+  // Create a map: { "YYYY-MM-DD": hoursUsed }
+  const usageMap = {};
+  dailyData.forEach(d => {
+    usageMap[d.date] = (d.totalDuration / 3600); // in hours
+  });
+
+  // Generate the last 7 days
+  const daysArray = getPast7Days();
+  const labels = daysArray.map(d => formatDayLabel(d));
+
+  // For each of the 7 days, find usage or 0
+  const hoursData = daysArray.map(d => {
+    const yyyy = d.getFullYear();
+    const mm   = String(d.getMonth()+1).padStart(2,'0');
+    const dd   = String(d.getDate()).padStart(2,'0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    return usageMap[dateStr] ? usageMap[dateStr].toFixed(2) : 0;
+  });
+
+  // Destroy old chart if it exists
+  if (window.dayChartInstance) {
+    window.dayChartInstance.destroy();
+  }
+
+  const ctx = document.getElementById('dayChart').getContext('2d');
+  window.dayChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Hours Focused',
+        data: hoursData,
+        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+      }]
+    },
+    options: {
+      responsive: false,
+      scales: {
+        y: {
+          beginAtZero: true, // start from 0
+          ticks: {
+            // ADDED: show “hr” next to each tick
+            callback: function(value) {
+              return value + ' hr';
+            }
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const val = context.parsed.y;
+              return context.dataset.label + ': ' + val + ' hr';
+            }
+          }
+        }
+      }
+    }
+  });
+}
