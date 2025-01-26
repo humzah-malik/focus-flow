@@ -324,7 +324,7 @@
     </main>
   
     <footer class="bg-gray-800 py-4 text-center text-sm text-gray-400">
-      &copy; 2023 Focus Flow
+      &copy; 2025 Focus Flow
     </footer>
   
     <!-- Scripts -->
@@ -338,14 +338,16 @@
     <script src="js/stats.js"></script>
 
     <!-- Script to open/close the Stats modal -->
+    <!-- Script to open/close the Stats modal -->
     <script>
       const statsBtn2 = document.getElementById('stats-btn');
       const statsModal2 = document.getElementById('stats-modal-2');
       const closeStatsBtn = document.getElementById('close-stats');
 
       // When user hovers over the Stats button:
-      statsBtn2.addEventListener('mouseenter', () => {
-        if (!window.isLoggedIn) {
+      statsBtn2.addEventListener('mouseenter', async () => {
+        const isLoggedIn = await window.isLoggedIn();
+        if (!isLoggedIn) {
           // Show a tooltip on hover
           statsBtn2.setAttribute('title', 'Please log in to view your stats');
         } else {
@@ -355,8 +357,9 @@
       });
 
       // When user actually clicks the Stats button:
-      statsBtn2.addEventListener('click', () => {
-        if (!window.isLoggedIn) {
+      statsBtn2.addEventListener('click', async () => {
+        const isLoggedIn = await window.isLoggedIn();
+        if (!isLoggedIn) {
           // Just alert (or do nothing) instead of opening the modal
           alert('Please log in to access stats');
           return;
