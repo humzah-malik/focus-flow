@@ -446,6 +446,8 @@ nav ul li a.active {
     align-items: center;
     min-height: 100vh;
     text-align: center;
+    /* Add a top margin or padding if you want a specific gap: */
+    margin-top: 2rem; /* or however much you like */
 }
 
 /* Style for the form container */
@@ -602,8 +604,9 @@ nav ul li a.active {
     display: flex;
     justify-content: center; /* Horizontally center the container */
     align-items: center; /* Vertically center the container */
-    height: 100vh; /* Full height of the viewport */
+    height: 95vh; /* Full height of the viewport */
     overflow: hidden; /* Prevent scrolling */
+    
 }
 
 .auth-page .main-wrapper {
@@ -706,4 +709,10 @@ header a:hover {
 /* Maintain black text color on hover */
 .tasks-popup-menu div:hover {
     color: #000; /* Black text when hovered */
+}
+
+/* Make "Focus Flow" appear larger. Adjust as you like. */
+.focus-flow-title {
+    font-size: 36px;  /* Increase title size */
+    margin-bottom: 20px;
 }

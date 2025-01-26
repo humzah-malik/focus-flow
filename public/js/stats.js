@@ -264,16 +264,16 @@ function buildTasksUsedTable(tasksUsed) {
   }
 
   let html = `
-    <h3 class="text-xl mb-2">All Tasks This Week</h3>
-    <table class="min-w-full text-sm text-left">
-      <thead class="bg-gray-700">
-        <tr>
-          <th class="px-2 py-1">Task</th>
-          <th class="px-2 py-1">Time (minutes)</th>
-        </tr>
-      </thead>
-      <tbody class="bg-gray-800">
-  `;
+  <h3 class="text-xl mb-2">All Tasks This Week</h3>
+  <table class="min-w-full text-sm text-left bg-gray-100 text-black">
+    <thead class="bg-gray-300 text-black">
+      <tr>
+        <th class="px-2 py-1">Task</th>
+        <th class="px-2 py-1">Time (minutes)</th>
+      </tr>
+    </thead>
+    <tbody>
+`; 
   tasksUsed.forEach(t => {
     const minutes = (t.duration / 60).toFixed(1);
     html += `

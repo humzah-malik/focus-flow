@@ -135,37 +135,60 @@
           </div>
         </div>
       </div>
-  
-      <!-- Optional: Todoist Task Modal (hidden by default) -->  
-      <div id="todoist-task-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 
-           flex items-center justify-center">
-        <div class="bg-white text-black p-6 rounded shadow-md max-w-sm w-full">
-          <h3 class="text-xl font-bold mb-4">Select Tasks to Import</h3>
-          <div id="todoist-task-list"></div>
-          <div class="mt-4 flex space-x-2 justify-end">
-            <button id="confirm-import" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
-              Import Selected Tasks
-            </button>
-            <button id="cancel-import" class="px-4 py-2 border rounded">
-              Cancel
-            </button>
-          </div>
-        </div>
+
+      <!-- Replace your old todoist-task-modal (the one with fixed inset-0) with this inline snippet. -->
+      <div 
+      id="todoist-task-modal"
+      class="hidden bg-white text-black rounded shadow-md border 
+            w-full max-w-md mx-auto mt-8 p-4"
+      >
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-4 border-b pb-2">
+        <h3 class="text-xl font-bold">Select Tasks to Import</h3>
+        <button 
+          id="close-todoist-modal" 
+          class="text-2xl font-bold"
+        >&times;</button>
       </div>
+
+      <!-- Middle content, grows as needed. We'll insert tasks here in tasks.js -->
+      <div id="todoist-task-list">
+        <!-- If no tasks come back, we can insert “No tasks available to be imported” dynamically. -->
+      </div>
+
+      <!-- Footer with "Import" and "Cancel" -->
+      <div class="border-t pt-2 mt-4 flex justify-end space-x-2">
+        <button 
+          id="confirm-import"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Import Selected Tasks
+        </button>
+        <button
+          id="cancel-import"
+          class="px-4 py-2 border rounded"
+        >
+          Cancel
+        </button>
+      </div>
+      </div>
+
 
       <!-- Settings Modal -->
       <div 
         id="settings-modal" 
         class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       >
-        <div class="bg-gray-900 p-6 rounded shadow-md max-w-md w-full relative">
+        <div class="bg-white text-black p-6 rounded shadow-md max-w-md w-full relative">
             <!-- Close button -->
-            <button id="close-settings" class="absolute top-2 right-2 text-2xl text-white">&times;</button>
+            <button id="close-settings" class="absolute top-2 right-2 text-2xl text-black">&times;</button>
+
             
-            <h2 class="text-xl font-bold mb-4 text-white">Settings</h2>
+            
+            <h2 class="text-xl font-bold mb-4">Settings</h2>
 
             <!-- WORK DURATION -->
-            <label for="work-duration-slider" class="block mb-1 text-white">
+            <label for="work-duration-slider" class="block mb-1 font-semibold">
               Work Duration (minutes)
             </label>
             <input
@@ -174,10 +197,10 @@
               min="5" max="60" step="1" value="25"
               class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
             />
-            <span id="work-duration-value" class="text-white text-sm">25 min</span>
+            <span id="work-duration-value" class="text-black text-sm">25 min</span>
 
             <!-- SHORT BREAK -->
-            <label for="short-break-slider" class="block mb-1 text-white mt-4">
+            <label for="short-break-slider" class="block mb-1 font-semibold mt-4">
               Short Break (minutes)
             </label>
             <input
@@ -186,10 +209,10 @@
               min="1" max="30" step="1" value="5"
               class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
             />
-            <span id="short-break-value" class="text-white text-sm">5 min</span>
+            <span id="short-break-value" class="text-black text-sm">5 min</span>
 
             <!-- LONG BREAK -->
-            <label for="long-break-slider" class="block mb-1 text-white mt-4">
+            <label for="long-break-slider" class="block mb-1 font-semibold mt-4">
               Long Break (minutes)
             </label>
             <input
@@ -198,10 +221,10 @@
               min="1" max="60" step="1" value="15"
               class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
             />
-            <span id="long-break-value" class="text-white text-sm">15 min</span>
+            <span id="long-break-value" class="text-black text-sm">15 min</span>
 
             <!-- SESSIONS -->
-            <label for="sessions-slider" class="block mb-1 text-white mt-4">
+            <label for="sessions-slider" class="block mb-1 font-semibold mt-4">
               Sessions before Long Break
             </label>
             <input
@@ -210,31 +233,43 @@
               min="1" max="10" step="1" value="4"
               class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
             />
-            <span id="sessions-value" class="text-white text-sm">4</span>
+            <span id="sessions-value" class="text-black text-sm">4</span>
 
             <!-- AUTOSTART TOGGLE -->
-            <label class="block mb-1 mt-4 text-white">Autostart</label>
-            <label class="inline-flex relative items-center cursor-pointer mb-4">
-              <input type="checkbox" id="auto-start-all" class="sr-only peer" />
-              <div class="
-                  w-11 h-6 bg-gray-200 rounded-full peer
-                  peer-checked:bg-purple-600
-                  after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                  after:bg-white after:border-gray-300 after:border after:rounded-full
-                  after:h-5 after:w-5 after:transition-all
-                  peer-checked:after:translate-x-5 peer-checked:after:border-white
-              "></div>
-            </label>
+            <div class="flex items-center justify-between mb-4 mt-4">
+              <label class="mr-2 font-semibold">Autostart</label>
+              <!-- Make sure the container is position:relative so the "after:" styling works -->
+              <label class="inline-flex items-center cursor-pointer relative">
+                <input type="checkbox" id="auto-start-all" class="sr-only peer" />
+                <div 
+                  class="w-11 h-6 bg-gray-200 rounded-full 
+                        peer peer-checked:bg-purple-600
+                        peer-focus:outline-none
+                        relative
+                        after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                        after:bg-white after:border-gray-300 after:border after:rounded-full
+                        after:h-5 after:w-5 after:transition-all
+                        peer-checked:after:translate-x-5 peer-checked:after:border-white">
+                </div>
+              </label>
+            </div>
 
             <!-- Save / Reset Buttons -->
             <form id="settings-form" class="mt-4 flex space-x-2 justify-end">
-              <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded">
-                  Save
+              <!-- Black background, white text, hover => slightly darker gray -->
+              <button type="submit" 
+                      class="bg-black text-white px-4 py-2 rounded 
+                             hover:bg-gray-700 transition-colors">
+                Save
               </button>
-              <button type="button" id="reset-default-btn" class="px-4 py-2 border rounded text-white border-white">
-                  Reset
+              <!-- Keep border-only, but make sure it’s black text, 
+                   and hover => gray background. -->
+              <button type="button" id="reset-default-btn" 
+                      class="px-4 py-2 border rounded border-black text-black 
+                             hover:bg-gray-200 transition-colors">
+                Reset
               </button>
-            </form>
+            </form>            
         </div>
       </div>
 
@@ -248,12 +283,15 @@
         max-h-[80vh] = “max height at 80% of viewport”
         overflow-y-auto = “scroll if content is taller than 80% of viewport”
       -->
-      <div class="bg-gray-900 text-white p-6 rounded shadow-md w-full max-w-xl max-h-[80vh] overflow-y-auto relative">
+      <div class="bg-white text-black p-6 rounded shadow-md w-full max-w-xl max-h-[80vh] overflow-y-auto relative">
         <!-- Close button at top right -->
-        <button id="close-stats" class="absolute top-2 right-2 text-2xl">&times;</button>
-        
-        <h2 class="text-2xl mb-4">Weekly Stats</h2>
 
+        <div class="flex items-center justify-between mb-4 border-b pb-2">
+          <h2 class="text-2xl font-bold">Stats</h2>
+          <button id="close-stats" class="absolute top-2 right-2 text-2xl text-black">&times;</button>
+        </div>
+
+        <h3 class="text-2xl mb-4 text-center">Weekly Stats</h2>
         <!-- Day-by-Day Usage Bar Chart -->
         <div class="mb-8">
           <h3 class="text-xl mb-2">Focus Hours (Past 7 Days)</h3>
@@ -266,9 +304,10 @@
           </div>
         </div>
 
+        <hr class="my-4 border-gray-300">
+        <h3 class="text-xl mb-2 text-center">Top Tasks</h3>
         <!-- Top Tasks Pie Chart -->
         <div class="mb-8">
-          <h3 class="text-xl mb-2">Top Tasks</h3>
           <div class="mx-auto" style="max-width: 400px;">
             <canvas id="taskChart" width="400" height="200"></canvas>
           </div>
@@ -304,14 +343,33 @@
       const statsModal2 = document.getElementById('stats-modal-2');
       const closeStatsBtn = document.getElementById('close-stats');
 
+      // When user hovers over the Stats button:
+      statsBtn2.addEventListener('mouseenter', () => {
+        if (!window.isLoggedIn) {
+          // Show a tooltip on hover
+          statsBtn2.setAttribute('title', 'Please log in to view your stats');
+        } else {
+          // Remove any old tooltip
+          statsBtn2.removeAttribute('title');
+        }
+      });
+
+      // When user actually clicks the Stats button:
       statsBtn2.addEventListener('click', () => {
+        if (!window.isLoggedIn) {
+          // Just alert (or do nothing) instead of opening the modal
+          alert('Please log in to access stats');
+          return;
+        }
+
+        // If logged in, open the modal and load stats
         statsModal2.classList.remove('hidden');
-        // Load stats from /stats/weekly
         if (window.loadWeeklyStats) {
           window.loadWeeklyStats();
         }
       });
 
+      // Close button on the modal
       closeStatsBtn.addEventListener('click', () => {
         statsModal2.classList.add('hidden');
       });

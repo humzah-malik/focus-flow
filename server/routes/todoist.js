@@ -132,6 +132,7 @@ router.post('/todoist/import', ensureAuthenticated, async (req, res) => {
         title: task.title,
         completed: false,
         timeSpent: 0,
+        projectName: task.projectName,
         todoistId: todoistTaskId, // Store Todoist Task ID
       });
       await newTask.save();

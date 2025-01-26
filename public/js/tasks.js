@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cancelBtn        = document.getElementById('cancel-btn');
   const addTaskConfirmBtn= document.getElementById('add-task-confirm-btn');
   const newTaskInput     = document.getElementById('new-task-input');
+  const closeTodoistBtn = document.getElementById('close-todoist-modal');
 
   new Sortable(document.getElementById('task-list'), {
     animation: 150,
@@ -39,7 +40,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ---------------------------------------------------------
     // 1) LOAD TASKS BASED ON LOGIN STATUS
     // ---------------------------------------------------------
+
+    // 1) Define the helper FIRST
+    async function isLoggedIn() {
+      try {
+        const response = await fetch('/check-session');
+        if (!response.ok) return false;
+        const data = await response.json();
+        return data.loggedIn === true;
+      } catch (error) {
+        console.error('Error checking login status:', error);
+        return false;
+      }
+    }
+
     const loggedIn = await isLoggedIn();
+
     if (loggedIn) {
         // Fetch tasks from the server
         fetch('/tasks', {
@@ -285,10 +301,13 @@ function importTodoist() {
     })
     .then((projectsWithTasks) => {
       const todoistTaskModal = document.getElementById('todoist-task-modal');
-      todoistTaskModal.style.display = 'block';
+      todoistTaskModal.classList.remove('hidden'); // unhide
 
       const todoistTaskList = document.getElementById('todoist-task-list');
       todoistTaskList.innerHTML = '';
+
+      // Suppose we flatten all tasks to see if we have any?
+      let totalTasks = 0;
 
       projectsWithTasks.forEach(project => {
         const projectContainer = document.createElement('div');
@@ -309,15 +328,24 @@ function importTodoist() {
           taskItem.style.wordBreak = 'break-word';
 
           taskItem.innerHTML = `
-            <input type="checkbox" id="${task.id}" data-title="${task.content}" />
-            <label for="${task.id}">${task.content}</label>
-          `;
+          <input type="checkbox"
+                id="${task.id}"
+                data-title="${task.content}"
+                **data-project="${project.projectName}"**
+          />
+          <label for="${task.id}">${task.content}</label>
+        `;
           tasksContainer.appendChild(taskItem);
+          totalTasks += project.tasks.length; // count tasks
         });
 
         projectContainer.appendChild(tasksContainer);
         todoistTaskList.appendChild(projectContainer);
       });
+      if (totalTasks === 0) {
+        // If no tasks
+        todoistTaskList.innerHTML = '<p>No tasks available to be imported</p>';
+      }
     })
     .catch((err) => console.error('Error fetching Todoist tasks:', err));
 }
@@ -329,6 +357,7 @@ function importTodoist() {
     ).map((checkbox) => ({
       id: checkbox.id,
       title: checkbox.dataset.title,
+      projectName: checkbox.dataset.project,
     }));
   
     fetch('/todoist/import', {
@@ -359,7 +388,7 @@ function importTodoist() {
 
   // Handle cancel import
   cancelImportBtn.addEventListener('click', () => {
-    todoistTaskModal.style.display = 'none';
+    document.getElementById('todoist-task-modal').classList.add('hidden');
   });
 
   /*
@@ -517,13 +546,17 @@ function importTodoist() {
           aria-label="Toggle Task Completion"
         >
           <i class="fas fa-check-circle ${isCompleted ? 'text-green-500' : 'text-gray-400'}"></i>
-        </button>
-        <!-- Task Name -->
-        <span class="ml-2 text-gray-700 font-semibold task-name ${isCompleted ? 'line-through text-gray-400' : ''}" 
-              style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-          ${task.title}
-        </span>
-      </div>
+      </button>
+      <!-- Show project name if a Todoist task -->
+      ${
+      task.todoistId && task.projectName
+        ? `<span class="ml-2 bg-gray-300 text-sm text-gray-800 px-2 py-1 rounded">${task.projectName}</span>`
+        : ''
+      }
+    <span class="ml-2 text-gray-700 font-semibold task-name ${isCompleted ? 'line-through text-gray-400' : ''}">
+      ${task.title}
+    </span>"
+    </div>
       <div class="flex items-center space-x-3">
         <span class="task-local-time text-blue-600 text-sm">Local: 0m0s</span>
         <span class="task-total-time text-gray-500 text-sm">
@@ -892,7 +925,12 @@ function importTodoist() {
     }
         */
 }
-  
+
+  if (closeTodoistBtn) {
+    closeTodoistBtn.addEventListener('click', () => {
+      document.getElementById('todoist-task-modal').classList.add('hidden');
+    });
+  }
 
   // ------------------------------------------------------------------
   // 3) SELECT A TASK
@@ -1196,12 +1234,24 @@ function addTodoistTaskListeners(taskId) {
   });
 
   async function deleteAllTasks() {
+    const loggedIn = await isLoggedIn();
+  
+    // Always clear local tasks from localStorage (and from the DOM)
+    localStorage.removeItem('tasks');
+    const taskList = document.getElementById('task-list');
+    taskList.innerHTML = '';
+  
+    if (!loggedIn) {
+      // If not logged in, we're done after clearing local tasks
+      alert('All local tasks have been deleted successfully (offline).');
+      return;
+    }
+  
+    // If the user is logged in, call our server route
     try {
       const response = await fetch('/tasks/delete-all', {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
   
       if (!response.ok) {
@@ -1209,14 +1259,16 @@ function addTodoistTaskListeners(taskId) {
         throw new Error(errorData.message || 'Failed to delete all tasks');
       }
   
-      // Remove all task elements from the DOM
-      taskList.innerHTML = '';
-      alert('All tasks have been deleted successfully.');
+      // The server side only deletes non-Todoist tasks in the DB
+      // If you want to show updated tasks in the DOM, do a new fetch('/tasks')
+      // For now, we just show an alert
+      alert('All non-Todoist tasks have been deleted successfully.');
     } catch (error) {
       console.error('Error deleting all tasks:', error);
       alert('Failed to delete all tasks. Please try again.');
     }
-  }  
+  }
+   
 
 
   document.addEventListener('stop-task-timer', () => {
@@ -1368,5 +1420,5 @@ function addTodoistTaskListeners(taskId) {
         });
         localStorage.setItem('tasks', JSON.stringify(updatedTasks));
     }
-  } 
+  };
 });

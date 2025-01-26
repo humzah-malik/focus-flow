@@ -22,10 +22,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             // User is logged in
             loginLink.style.display = "none";
             logoutButton.classList.remove("hidden");
+            window.isLoggedIn = true;
         } else {
             // User is not logged in
             loginLink.style.display = "inline-block";
             logoutButton.classList.add("hidden");
+            window.isLoggedIn = false;
         }
     } catch (error) {
         console.error('Error checking login status:', error);
