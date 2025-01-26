@@ -136,6 +136,7 @@ router.post('/todoist/import', ensureAuthenticated, async (req, res) => {
         todoistId: todoistTaskId, // Store Todoist Task ID
       });
       await newTask.save();
+      console.log(`Imported Task: ${newTask.title} | Project: ${newTask.projectName}`);
       importedTasks.push(newTask);
     }
     res.json({ importedTasks });

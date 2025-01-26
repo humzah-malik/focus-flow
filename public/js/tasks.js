@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const addTaskConfirmBtn= document.getElementById('add-task-confirm-btn');
   const newTaskInput     = document.getElementById('new-task-input');
   const closeTodoistBtn = document.getElementById('close-todoist-modal');
+  //const newTaskProjectInput = document.getElementById('new-task-project-input');
 
   new Sortable(document.getElementById('task-list'), {
     animation: 150,
@@ -121,50 +122,55 @@ cancelBtn.addEventListener('click', () => {
   // ---------------------------------------------------------
   // Handle adding a new task
   addTaskConfirmBtn.addEventListener('click', async () => {
-      const taskName = newTaskInput.value.trim();
-      if (!taskName) {
-          alert('Please enter a task name.');
-          return;
-      }
-
-      const loggedIn = await window.isLoggedIn();
-
-      if (loggedIn) {
-          // Create task via server
-          fetch('/tasks', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ title: taskName })
-          })
-          .then(res => {
-              if (!res.ok) throw new Error('Failed to create task');
-              return res.json();
-          })
-          .then(data => {
-              console.log('Created task:', data.task);
-              renderTask(data.task, true); // 'true' for server task
-              newTaskInput.value = '';
-              addTaskPopup.classList.add('hidden');
-          })
-          .catch(err => {
-              console.error(err);
-              alert('Error creating task');
-          });
-      } else {
-          // Create task locally
-          const localTasks = JSON.parse(localStorage.getItem('tasks')) || [];
-          const newTask = {
-              id: `local-${Date.now()}`, // Unique ID for local tasks
-              title: taskName,
-              timeSpent: 0
-          };
-          localTasks.push(newTask);
-          localStorage.setItem('tasks', JSON.stringify(localTasks));
-          renderTask(newTask, false); // 'false' for local task
-          newTaskInput.value = '';
-          addTaskPopup.classList.add('hidden');
-      }
-  });
+    const taskName = newTaskInput.value.trim();
+    const projectName = 'Local';
+  
+    if (!taskName) {
+      alert('Please enter a task name.');
+      return;
+    }
+  
+    const loggedIn = await window.isLoggedIn();
+  
+    if (loggedIn) {
+      // Create task via server
+      fetch('/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: taskName, projectName }) // Include projectName
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to create task');
+        return res.json();
+      })
+      .then(data => {
+        console.log('Created task:', data.task);
+        renderTask(data.task, true); // 'true' for server task
+        newTaskInput.value = '';
+        newTaskProjectInput.value = ''; // Clear project input
+        addTaskPopup.classList.add('hidden');
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Error creating task');
+      });
+    } else {
+      // Create task locally
+      const localTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      const newTask = {
+        id: `local-${Date.now()}`, // Unique ID for local tasks
+        title: taskName,
+        projectName, // Include projectName
+        timeSpent: 0
+      };
+      localTasks.push(newTask);
+      localStorage.setItem('tasks', JSON.stringify(localTasks));
+      renderTask(newTask, false); // 'false' for local task
+      newTaskInput.value = '';
+      //newTaskProjectInput.value = ''; // Clear project input
+      addTaskPopup.classList.add('hidden');
+    }
+  });  
 
 const importTodoistBtn = document.getElementById('import-todoist-btn');
 const todoistTaskModal = document.getElementById('todoist-task-modal');
@@ -256,17 +262,6 @@ if (tasksMenuTrigger) {
     }
 
     // *** Add "Delete All Tasks" Option ***
-    const deleteAllItem = document.createElement('div');
-    deleteAllItem.textContent = 'Delete All Tasks';
-    deleteAllItem.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1 text-red-600';
-    deleteAllItem.addEventListener('click', () => {
-      const confirmDelete = confirm('Are you sure you want to delete all tasks? This action cannot be undone.');
-      if (confirmDelete) {
-        deleteAllTasks();
-      }
-      menu.remove();
-    });
-    menu.appendChild(deleteAllItem);
 
     // Insert menu into the DOM
     tasksMenuTrigger.parentNode.appendChild(menu);
@@ -297,6 +292,7 @@ function importTodoist() {
       let totalTasks = 0;
 
       projectsWithTasks.forEach(project => {
+        console.log(`Processing project: ${project.projectName}`);
         const projectContainer = document.createElement('div');
         projectContainer.classList.add('todoist-project');
 
@@ -318,8 +314,7 @@ function importTodoist() {
           <input type="checkbox"
                 id="${task.id}"
                 data-title="${task.content}"
-                **data-project="${project.projectName}"**
-          />
+                data-project="${project.projectName}" />
           <label for="${task.id}">${task.content}</label>
         `;
           tasksContainer.appendChild(taskItem);
@@ -503,61 +498,58 @@ function importTodoist() {
     `;
     // Determine the task ID based on its origin
     const taskId = isServerTask ? task._id : task.id;
-    taskItem.setAttribute('data-task-id', taskId);
-
+  
     // Initialize DB vs. local time
     if (isServerTask) {
-        dbTimeSpent[taskId] = task.timeSpent || 0;
+      dbTimeSpent[taskId] = task.timeSpent || 0;
     } else {
-        // For local tasks, ensure id starts with 'local-'
-        if (!taskId.startsWith('local-')) {
-            console.warn(`Local task ID "${taskId}" does not start with 'local-'`);
-        }
-        dbTimeSpent[taskId] = 0; // Server has no data for local tasks
+      // For local tasks, ensure id starts with 'local-'
+      if (!taskId.startsWith('local-')) {
+        console.warn(`Local task ID "${taskId}" does not start with 'local-'`);
+      }
+      dbTimeSpent[taskId] = 0; // Server has no data for local tasks
     }
     localTime[taskId] = 0;
-
+  
     // Check if the task is completed
     const isCompleted = task.completed || false;
-
+  
     // Convert total timeSpent to minutes/seconds for display
     const dbMin = Math.floor(dbTimeSpent[taskId] / 60);
     const dbSec = dbTimeSpent[taskId] % 60;
-
+  
     // Build the inner HTML:
     taskItem.innerHTML = `
-      <div class="flex items-center">
-        <!-- Check-Circle Button -->
-        <button 
-          class="check-circle-btn w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300 focus:outline-none transition-colors duration-200"
-          aria-label="Toggle Task Completion"
-        >
-          <i class="fas fa-check-circle ${isCompleted ? 'text-green-500' : 'text-gray-400'}"></i>
-      </button>
-      <!-- Show project name if a Todoist task -->
-      ${
-      task.todoistId && task.projectName
-        ? `<span class="ml-2 bg-gray-300 text-sm text-gray-800 px-2 py-1 rounded">${task.projectName}</span>`
-        : ''
-      }
+  <div class="flex items-center">
+    <!-- Check-Circle Button -->
+    <button 
+      class="check-circle-btn w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300 focus:outline-none transition-colors duration-200"
+      aria-label="Toggle Task Completion"
+    >
+      <i class="fas fa-check-circle ${isCompleted ? 'text-green-500' : 'text-gray-400'}"></i>
+    </button>
+    <!-- Show project name if available -->
+    <span class="ml-2 bg-gray-300 text-sm text-gray-800 px-2 py-1 rounded">
+  ${task.projectName || 'Local'}
+    </span>
     <span class="ml-2 text-gray-700 font-semibold task-name ${isCompleted ? 'line-through text-gray-400' : ''}">
       ${task.title}
-    </span>"
-    </div>
-      <div class="flex items-center space-x-3">
-        <span class="task-local-time text-blue-600 text-sm">Local: 0m0s</span>
-        <span class="task-total-time text-gray-500 text-sm">
-          Total: ${dbMin}m${dbSec}s
-        </span>
-        <!-- Three Dots Menu Trigger Wrapped in a Button -->
-        <button 
-          class="three-dots-menu-btn w-8 h-8 flex items-center justify-center bg-gray-700 rounded hover:bg-gray-600 focus:outline-none transition-colors duration-200"
-          aria-label="Task options"
-        >
-          <i class="fas fa-ellipsis-v text-white"></i>
-        </button>
-      </div>
-    `;
+    </span>
+  </div>
+  <div class="flex items-center space-x-3">
+    <span class="task-local-time text-blue-600 text-sm">Local: 0m0s</span>
+    <span class="task-total-time text-gray-500 text-sm">
+      Total: ${dbMin}m${dbSec}s
+    </span>
+    <!-- Three Dots Menu Trigger Wrapped in a Button -->
+    <button 
+      class="three-dots-menu-btn w-8 h-8 flex items-center justify-center bg-gray-700 rounded hover:bg-gray-600 focus:outline-none transition-colors duration-200"
+      aria-label="Task options"
+    >
+      <i class="fas fa-ellipsis-v text-white"></i>
+    </button>
+  </div>
+`;
 
     // Append to the #task-list
     taskList.appendChild(taskItem);

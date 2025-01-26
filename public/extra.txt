@@ -14,3 +14,15 @@
           </div>
         </div>
       </div>
+
+const deleteAllItem = document.createElement('div');
+    deleteAllItem.textContent = 'Delete All Tasks';
+    deleteAllItem.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1 text-red-600';
+    deleteAllItem.addEventListener('click', () => {
+      const confirmDelete = confirm('Are you sure you want to delete all tasks? This action cannot be undone.');
+      if (confirmDelete) {
+        deleteAllTasks();
+      }
+      menu.remove();
+    });
+    menu.appendChild(deleteAllItem);

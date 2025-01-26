@@ -72,3 +72,1799 @@ function buildDayChart(dailyData) {
         return false;
       }
     }
+
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // DOM elements
+  //const taskInput = document.getElementById('task-input');
+  //const addTaskButton = document.getElementById('add-task-button');
+  const taskList = document.getElementById('task-list');
+
+  // New "Add Task" popup elements
+  const addTaskBtn       = document.getElementById('add-task-btn');
+  const addTaskPopup     = document.getElementById('add-task-popup');
+  const cancelBtn        = document.getElementById('cancel-btn');
+  const addTaskConfirmBtn= document.getElementById('add-task-confirm-btn');
+  const newTaskInput     = document.getElementById('new-task-input');
+  const closeTodoistBtn = document.getElementById('close-todoist-modal');
+  const newTaskProjectInput = document.getElementById('new-task-project-input');
+
+  new Sortable(document.getElementById('task-list'), {
+    animation: 150,
+    ghostClass: 'bg-gray-200', // or any class you want
+    onEnd: () => {
+      console.log('Tasks reordered');
+      // If you want to persist order to DB, handle here
+    },
+  });
+
+  // Active task tracking
+  window.activeTaskId = null;
+  const taskTimes = {}; // { taskId: numberOfSeconds }
+
+  //const tasksMenuTrigger = document.getElementById('tasks-menu-trigger');
+
+  // Timer interval for the active task
+  let timerInterval = null;
+
+  // Whether the main (global) timer is running
+  let mainTimerRunning = false;
+
+  // **NEW** Two dictionaries to keep track of DB total vs. local:
+  window.dbTimeSpent = {};   // { taskId: numberOfSeconds from the DB }
+  window.localTime = {};     // { taskId: numberOf extra seconds accumulated locally }
+
+  // ---------------------------------------------------------
+    // 1) LOAD TASKS BASED ON LOGIN STATUS
+    // ---------------------------------------------------------
+
+    const loggedIn = await window.isLoggedIn();
+
+    if (loggedIn) {
+        // Fetch tasks from the server
+        fetch('/tasks', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Failed to fetch tasks');
+            }
+            return res.json();
+        })
+        .then(tasks => {
+            console.log('Tasks from server:', tasks);
+            tasks.forEach(task => {
+                renderTask(task, true); // 'true' indicates a server task
+            });
+        })
+        .catch(err => console.error(err));
+    } else {
+        // Fetch tasks from localStorage
+        const localTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        localTasks.forEach(task => {
+            renderTask(task, false); // 'false' indicates a local task
+        });
+    }
+  
+
+  // 1) ADD NEW TASKS
+  /*
+  addTaskButton.addEventListener('click', () => {
+      const taskName = taskInput.value.trim();
+      if (!taskName) {
+      alert('Please enter a task name.');
+      return;
+      }
+  
+      // Make the POST request to create the task in the database
+      fetch('/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: taskName })
+      })
+      .then(res => {
+          if (!res.ok) {
+          throw new Error('Failed to create task');
+          }
+          return res.json();
+      })
+      .then(data => {
+          // data.task is the newly created Task from the server
+          console.log('Created task:', data.task);
+          // Now we call our 'renderTask(...)' function
+          renderTask(data.task);
+          taskInput.value = '';
+      })
+      .catch(err => {
+          console.error(err);
+          alert('Error creating task');
+      });
+  });
+  */
+
+// Show/hide popup
+addTaskBtn.addEventListener('click', () => {
+  addTaskPopup.classList.toggle('hidden');
+});
+
+cancelBtn.addEventListener('click', () => {
+  addTaskPopup.classList.add('hidden');
+  newTaskInput.value = '';
+});
+
+  // ---------------------------------------------------------
+  // 2) HANDLE ADD TASK BUTTON POPUP
+  // ---------------------------------------------------------
+  // Handle adding a new task
+  addTaskConfirmBtn.addEventListener('click', async () => {
+    const taskName = newTaskInput.value.trim();
+    const projectName = newTaskProjectInput.value.trim() || 'General'; // Default if empty
+  
+    if (!taskName) {
+      alert('Please enter a task name.');
+      return;
+    }
+  
+    const loggedIn = await window.isLoggedIn();
+  
+    if (loggedIn) {
+      // Create task via server
+      fetch('/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: taskName, projectName }) // Include projectName
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to create task');
+        return res.json();
+      })
+      .then(data => {
+        console.log('Created task:', data.task);
+        renderTask(data.task, true); // 'true' for server task
+        newTaskInput.value = '';
+        newTaskProjectInput.value = ''; // Clear project input
+        addTaskPopup.classList.add('hidden');
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Error creating task');
+      });
+    } else {
+      // Create task locally
+      const localTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      const newTask = {
+        id: `local-${Date.now()}`, // Unique ID for local tasks
+        title: taskName,
+        projectName, // Include projectName
+        timeSpent: 0
+      };
+      localTasks.push(newTask);
+      localStorage.setItem('tasks', JSON.stringify(localTasks));
+      renderTask(newTask, false); // 'false' for local task
+      newTaskInput.value = '';
+      newTaskProjectInput.value = ''; // Clear project input
+      addTaskPopup.classList.add('hidden');
+    }
+  });  
+
+const importTodoistBtn = document.getElementById('import-todoist-btn');
+const todoistTaskModal = document.getElementById('todoist-task-modal');
+const todoistTaskList = document.getElementById('todoist-task-list');
+const confirmImportBtn = document.getElementById('confirm-import');
+const cancelImportBtn = document.getElementById('cancel-import');
+
+// In tasks.js, somewhere after DOMContentLoaded:
+const tasksMenuTrigger = document.getElementById('tasks-menu-trigger');
+
+// Make sure tasksMenuTrigger exists in the DOM
+if (tasksMenuTrigger) {
+  tasksMenuTrigger.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    
+    // If there's already a menu, remove it
+    const oldMenu = document.getElementById('tasks-popup-menu');
+    if (oldMenu) oldMenu.remove();
+
+    // Build a new menu <div>
+    const menu = document.createElement('div');
+    menu.id = 'tasks-popup-menu';
+    menu.className = `
+      absolute top-10 right-0 bg-white text-black border border-gray-300 
+      rounded shadow-md text-sm z-10 p-2 w-40
+    `;
+
+    // 1) Check if user is logged in
+    let isLoggedIn = false;
+    try {
+      const sessionRes = await fetch('/check-session');
+      const sessionData = await sessionRes.json();
+      isLoggedIn = sessionData.loggedIn === true;
+    } catch (err) {
+      console.error('Error checking session:', err);
+    }
+
+    // 2) If not logged in => no Todoist
+    if (!isLoggedIn) {
+      // We'll just show "Connect to Todoist" as an example
+      const mustLoginItem = document.createElement('div');
+      mustLoginItem.textContent = 'Connect to Todoist';
+      mustLoginItem.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1';
+      mustLoginItem.addEventListener('click', () => {
+        alert('Please log in first!');
+      });
+      menu.appendChild(mustLoginItem);
+    } else {
+      // 3) If logged in => do a quick GET /todoist/tasks
+      //    If 200 => we’re connected, else 400 => not connected
+      let isConnected = false;
+      try {
+        const todoistRes = await fetch('/todoist/tasks');
+        if (todoistRes.ok) {
+          // If it returned tasks => definitely connected
+          isConnected = true;
+        } else if (todoistRes.status === 400) {
+          // "User is not connected" is what your code does
+          isConnected = false;
+        }
+        // We don’t actually use the tasks data here.
+      } catch (error) {
+        console.error('Error fetching /todoist/tasks:', error);
+      }
+
+      if (!isConnected) {
+        // Show a single option: "Connect to Todoist" => calls /todoist/connect
+        const connectItem = document.createElement('div');
+        connectItem.textContent = 'Connect to Todoist';
+        connectItem.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1';
+        connectItem.addEventListener('click', () => {
+          // Just redirect to /todoist/connect
+          // The callback will redirect back to /index.html 
+          // (once you remove the old “Todoist connected” page)
+          window.location.href = '/todoist/connect';
+        });
+        menu.appendChild(connectItem);
+      } else {
+        // Already connected => show "Import from Todoist"
+        const importItem = document.createElement('div');
+        importItem.textContent = 'Import from Todoist';
+        importItem.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1';
+        importItem.addEventListener('click', () => {
+          importTodoist(); // We'll define this function below
+          menu.remove(); // Hide the menu
+        });
+        menu.appendChild(importItem);
+      }
+    }
+
+    // *** Add "Delete All Tasks" Option ***
+
+    // Insert menu into the DOM
+    tasksMenuTrigger.parentNode.appendChild(menu);
+
+    // If user clicks anywhere else, remove the menu
+    document.addEventListener('click', function docListener() {
+      menu.remove();
+      document.removeEventListener('click', docListener);
+    }, { once: true });
+  });
+}
+
+// Helper function to import tasks + show the modal
+function importTodoist() {
+  fetch('/todoist/tasks')
+    .then((res) => {
+      if (!res.ok) throw new Error('Failed to fetch Todoist tasks');
+      return res.json();
+    })
+    .then((projectsWithTasks) => {
+      const todoistTaskModal = document.getElementById('todoist-task-modal');
+      todoistTaskModal.classList.remove('hidden'); // unhide
+
+      const todoistTaskList = document.getElementById('todoist-task-list');
+      todoistTaskList.innerHTML = '';
+
+      // Suppose we flatten all tasks to see if we have any?
+      let totalTasks = 0;
+
+      projectsWithTasks.forEach(project => {
+        console.log(`Processing project: ${project.projectName}`);
+        const projectContainer = document.createElement('div');
+        projectContainer.classList.add('todoist-project');
+
+        const projectTitle = document.createElement('h4');
+        projectTitle.textContent = project.projectName;
+        projectContainer.appendChild(projectTitle);
+
+        const tasksContainer = document.createElement('div');
+        tasksContainer.classList.add('todoist-tasks');
+
+        project.tasks.forEach(task => {
+          const taskItem = document.createElement('div');
+          taskItem.classList.add('todoist-task-item');
+          // Allow wrapping
+          taskItem.style.whiteSpace = 'normal';
+          taskItem.style.wordBreak = 'break-word';
+
+          taskItem.innerHTML = `
+          <input type="checkbox"
+                id="${task.id}"
+                data-title="${task.content}"
+                data-project="${project.projectName}" />
+          <label for="${task.id}">${task.content}</label>
+        `;
+          tasksContainer.appendChild(taskItem);
+          totalTasks += project.tasks.length; // count tasks
+        });
+
+        projectContainer.appendChild(tasksContainer);
+        todoistTaskList.appendChild(projectContainer);
+      });
+      if (totalTasks === 0) {
+        // If no tasks
+        todoistTaskList.innerHTML = '<p>No tasks available to be imported</p>';
+      }
+    })
+    .catch((err) => console.error('Error fetching Todoist tasks:', err));
+}
+
+  // Handle confirm import
+  confirmImportBtn.addEventListener('click', () => {
+    const selectedTasks = Array.from(
+      todoistTaskList.querySelectorAll('input[type="checkbox"]:checked')
+    ).map((checkbox) => ({
+      id: checkbox.id,
+      title: checkbox.dataset.title,
+      projectName: checkbox.dataset.project,
+    }));
+  
+    fetch('/todoist/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tasks: selectedTasks }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to import tasks');
+        return res.json();
+      })
+      .then((data) => {
+        console.log('Tasks imported:', data.importedTasks);
+        // Hide the modal and reload tasks
+        todoistTaskModal.style.display = 'none';
+        fetch('/tasks')
+          .then((res) => res.json())
+          .then((tasks) => {
+            taskList.innerHTML = '';
+            tasks.forEach((task) => {
+              renderTask(task);
+            });
+          });
+      })
+      .catch((err) => console.error('Error importing tasks:', err));
+  });
+  
+
+  // Handle cancel import
+  cancelImportBtn.addEventListener('click', () => {
+    document.getElementById('todoist-task-modal').classList.add('hidden');
+  });
+
+  /*
+  function renderTask(task) {
+    // Create the DOM element
+    const taskItem = document.createElement('div');
+    taskItem.classList.add('task-item');
+    // Use the MongoDB _id
+    taskItem.setAttribute('data-task-id', task._id);
+
+    dbTimeSpent[task._id] = task.timeSpent || 0;
+
+    // Reset local time to 0 (since we just loaded it from DB)
+    localTime[task._id] = 0;
+
+    // Assume timeSpent is in seconds from the server
+    const dbMinutes = Math.floor(task.timeSpent / 60) || 0;
+    const dbSeconds = (task.timeSpent % 60) || 0;
+
+    taskItem.innerHTML = `
+      <button class="task-select">Select</button>
+      <button class="task-unselect" style="display: none;">Unselect</button>
+      <span class="task-name">${task.title}</span>
+      <!-- Local time increments while selected -->
+      <span class="task-local-time">Local: 0m0s</span>
+
+      <!-- DB total time from the server -->
+      <span class="task-total-time">Total: ${dbMinutes}m${dbSeconds}s</span>
+      <button class="task-delete-local">&#10005;</button> <!-- Local Delete Button -->
+    `;
+
+    taskList.appendChild(taskItem);
+
+    // Event Listeners for Select/Unselect and Local Delete
+    const selectBtn = taskItem.querySelector('.task-select');
+    selectBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleSelectTask(task._id);
+    });
+
+    const unselectBtn = taskItem.querySelector('.task-unselect');
+    unselectBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleUnselectTask(task._id);
+    });
+
+    const deleteLocalBtn = taskItem.querySelector('.task-delete-local');
+    deleteLocalBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Delete the task locally
+      fetch(`/tasks/${task._id}`, { method: 'DELETE' })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to delete task');
+          taskItem.remove();
+          if (activeTaskId === task._id) {
+            activeTaskId = null;
+            stopActiveTaskInterval();
+          }
+        })
+        .catch(err => console.error(err));
+    });
+
+    // **Todoist Actions: Complete and Delete**
+    if (task.todoistId) { // Only for tasks imported from Todoist
+      // Complete Button
+      const completeButton = document.createElement('button');
+      completeButton.textContent = 'Complete';
+      completeButton.classList.add('task-complete-todoist');
+      completeButton.onclick = function() {
+        fetch(`/todoist/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taskId: task.todoistId }) // **Use todoistId**
+        })
+        .then(response => {
+          if (response.ok) {
+            console.log('Task completed on Todoist');
+            taskItem.remove(); // Remove from the UI or update as needed
+          } else {
+            return response.json().then(errData => {
+              throw new Error(errData.message || 'Failed to mark task as completed');
+            });
+          }
+        })
+        .catch(error => console.error('Error completing task:', error));
+      };
+      taskItem.appendChild(completeButton);
+
+      // Delete Button
+      const deleteTodoistButton = document.createElement('button');
+      deleteTodoistButton.textContent = 'Delete from Todoist';
+      deleteTodoistButton.classList.add('task-delete-todoist');
+      deleteTodoistButton.onclick = function() {
+        if (confirm('This will delete the task in Todoist. Continue?')) {
+          fetch(`/todoist/delete`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taskId: task.todoistId }) // **Use todoistId**
+          })
+          .then(response => {
+            if (response.ok) {
+              console.log('Task deleted from Todoist');
+              taskItem.remove(); // Remove from the UI
+            } else {
+              return response.json().then(errData => {
+                throw new Error(errData.message || 'Failed to delete task');
+              });
+            }
+          })
+          .catch(error => console.error('Error deleting task:', error));
+        }
+      };
+      taskItem.appendChild(deleteTodoistButton);
+    }
+  }
+  */
+
+  function renderTask(task, isServerTask = true) {
+    // Create outer container
+    const taskItem = document.createElement('div');
+    // Tailwind classes for styling:
+    taskItem.className = `
+      task-item bg-white p-4 rounded-lg shadow-md flex justify-between items-center 
+      cursor-pointer relative
+    `;
+    // Determine the task ID based on its origin
+    const taskId = isServerTask ? task._id : task.id;
+  
+    // Initialize DB vs. local time
+    if (isServerTask) {
+      dbTimeSpent[taskId] = task.timeSpent || 0;
+    } else {
+      // For local tasks, ensure id starts with 'local-'
+      if (!taskId.startsWith('local-')) {
+        console.warn(`Local task ID "${taskId}" does not start with 'local-'`);
+      }
+      dbTimeSpent[taskId] = 0; // Server has no data for local tasks
+    }
+    localTime[taskId] = 0;
+  
+    // Check if the task is completed
+    const isCompleted = task.completed || false;
+  
+    // Convert total timeSpent to minutes/seconds for display
+    const dbMin = Math.floor(dbTimeSpent[taskId] / 60);
+    const dbSec = dbTimeSpent[taskId] % 60;
+  
+    // Build the inner HTML:
+    taskItem.innerHTML = `
+  <div class="flex items-center">
+    <!-- Check-Circle Button -->
+    <button 
+      class="check-circle-btn w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300 focus:outline-none transition-colors duration-200"
+      aria-label="Toggle Task Completion"
+    >
+      <i class="fas fa-check-circle ${isCompleted ? 'text-green-500' : 'text-gray-400'}"></i>
+    </button>
+    <!-- Show project name if available -->
+    ${
+      task.projectName
+        ? `<span class="ml-2 bg-gray-300 text-sm text-gray-800 px-2 py-1 rounded">${task.projectName}</span>`
+        : `<span class="ml-2 bg-gray-300 text-sm text-gray-800 px-2 py-1 rounded">No Project</span>`
+    }
+    <span class="ml-2 text-gray-700 font-semibold task-name ${isCompleted ? 'line-through text-gray-400' : ''}">
+      ${task.title}
+    </span>
+  </div>
+  <div class="flex items-center space-x-3">
+    <span class="task-local-time text-blue-600 text-sm">Local: 0m0s</span>
+    <span class="task-total-time text-gray-500 text-sm">
+      Total: ${dbMin}m${dbSec}s
+    </span>
+    <!-- Three Dots Menu Trigger Wrapped in a Button -->
+    <button 
+      class="three-dots-menu-btn w-8 h-8 flex items-center justify-center bg-gray-700 rounded hover:bg-gray-600 focus:outline-none transition-colors duration-200"
+      aria-label="Task options"
+    >
+      <i class="fas fa-ellipsis-v text-white"></i>
+    </button>
+  </div>
+`;
+
+    // Append to the #task-list
+    taskList.appendChild(taskItem);
+
+    // *** (1) Click to toggle selection/unselection ***
+    taskItem.addEventListener('click', (e) => {
+        // If the user clicked the check-circle button or three-dots button, do not toggle selection
+        if (e.target.closest('.check-circle-btn') || e.target.closest('.three-dots-menu-btn')) {
+            return; 
+        }
+
+        // Check if the task is completed
+        const isCompleted = taskItem.querySelector('.task-name').classList.contains('line-through');
+        if (isCompleted) {
+            alert('Cannot select a completed task. Please uncomplete it first.');
+            return;
+        }
+
+        if (activeTaskId === taskId) {
+            // If already active, unselect
+            handleUnselectTask(taskId);
+        } else {
+            handleSelectTask(taskId);
+        }
+    });
+
+    // *** (2) Check-Circle Button Event Listener ***
+    // *** (2) Check-Circle Button Event Listener ***
+    const checkCircleBtn = taskItem.querySelector('.check-circle-btn');
+    checkCircleBtn.addEventListener('click', async (e) => {
+        e.stopPropagation(); // Prevent triggering the taskItem click
+
+        // Determine current completion status from the icon's class
+        const checkIcon = checkCircleBtn.querySelector('i');
+        const currentlyCompleted = checkIcon.classList.contains('text-green-500');
+
+        // For Todoist tasks, prompt confirmation before completing
+        if (task.todoistId && !currentlyCompleted) {
+            const confirmComplete = confirm('This will complete the task in Todoist. Continue?');
+            if (!confirmComplete) return;
+        }
+
+        const newCompletedStatus = !currentlyCompleted; // Toggle status
+
+        // Update UI immediately for responsiveness
+        if (newCompletedStatus) {
+            checkIcon.classList.remove('text-gray-400');
+            checkIcon.classList.add('text-green-500');
+            taskItem.querySelector('.task-name').classList.add('line-through', 'text-gray-400');
+        } else {
+            checkIcon.classList.remove('text-green-500');
+            checkIcon.classList.add('text-gray-400');
+            taskItem.querySelector('.task-name').classList.remove('line-through', 'text-gray-400');
+        }
+
+        // **New: Handle Time Accumulation Based on Completion Status**
+        if (newCompletedStatus) {
+          // If the completed task is currently active, stop its timer
+          if (activeTaskId === taskId) {
+              stopActiveTaskInterval();
+              activeTaskId = null; // Clear active task
+              const selectedTask = document.querySelector(`[data-task-id="${taskId}"]`);
+              if (selectedTask) {
+                  selectedTask.classList.remove('selected-task');
+                  selectedTask.style.borderLeft = 'none';
+              }
+          }
+      }
+
+        // Update the task's completed status in the data model
+        if (isServerTask) {
+            if (task.todoistId && newCompletedStatus) {
+                // For Todoist tasks, complete via Todoist API and then remove the task
+                try {
+                    const response = await fetch(`/todoist/complete`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ taskId: task.todoistId })
+                    });
+                    if (!response.ok) throw new Error('Failed to complete task in Todoist');
+                    // Remove the task from UI after successful completion
+                    taskItem.remove();
+                    console.log(`Todoist Task "${task.title}" completed and removed.`);
+                } catch (error) {
+                    console.error(error);
+                    alert('Failed to complete Todoist task. Please try again.');
+                    // Revert UI changes on failure
+                    if (newCompletedStatus) {
+                        checkIcon.classList.remove('text-green-500');
+                        checkIcon.classList.add('text-gray-400');
+                        taskItem.querySelector('.task-name').classList.remove('line-through', 'text-gray-400');
+                    } else {
+                        checkIcon.classList.remove('text-gray-400');
+                        checkIcon.classList.add('text-green-500');
+                        taskItem.querySelector('.task-name').classList.add('line-through', 'text-gray-400');
+                    }
+                    return;
+                }
+            } else {
+                // Regular server-side task
+                try {
+                    const response = await fetch(`/tasks/${taskId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ completed: newCompletedStatus })
+                    });
+                    if (!response.ok) throw new Error('Failed to update task status');
+                    const updatedTask = await response.json();
+                    console.log(`Task "${updatedTask.task.title}" completion status updated to ${updatedTask.task.completed}`);
+                } catch (error) {
+                    console.error(error);
+                    alert('Failed to update task status. Please try again.');
+                    // Revert UI changes on failure
+                    if (newCompletedStatus) {
+                        checkIcon.classList.remove('text-green-500');
+                        checkIcon.classList.add('text-gray-400');
+                        taskItem.querySelector('.task-name').classList.remove('line-through', 'text-gray-400');
+                    } else {
+                        checkIcon.classList.remove('text-gray-400');
+                        checkIcon.classList.add('text-green-500');
+                        taskItem.querySelector('.task-name').classList.add('line-through', 'text-gray-400');
+                    }
+                    return;
+                }
+            }
+        } else {
+            // Update in localStorage
+            try {
+                const localTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                const updatedTasks = localTasks.map(t => {
+                    if (t.id === taskId) {
+                        return { ...t, completed: newCompletedStatus };
+                    }
+                    return t;
+                });
+                localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+                console.log(`Local task "${task.title}" completion status updated to ${newCompletedStatus}`);
+            } catch (error) {
+                console.error('Failed to update local task status:', error);
+                alert('Failed to update task status locally. Please try again.');
+                // Revert UI changes on failure
+                if (newCompletedStatus) {
+                    checkIcon.classList.remove('text-green-500');
+                    checkIcon.classList.add('text-gray-400');
+                    taskItem.querySelector('.task-name').classList.remove('line-through', 'text-gray-400');
+                } else {
+                    checkIcon.classList.remove('text-gray-400');
+                    checkIcon.classList.add('text-green-500');
+                    taskItem.querySelector('.task-name').classList.add('line-through', 'text-gray-400');
+                }
+                return;
+            }
+        }
+    });
+
+
+    // *** (3) Three Dots Menu Button Event Listener ***
+    const threeDotsButton = taskItem.querySelector('.three-dots-menu-btn');
+    threeDotsButton.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent triggering the taskItem click
+    
+        // Remove any existing menus
+        const existingMenus = document.querySelectorAll('.tasks-popup-menu');
+        existingMenus.forEach(menu => menu.remove());
+    
+        // Build a simple menu
+        const menu = document.createElement('div');
+        menu.className = `
+            tasks-popup-menu absolute top-10 right-4 bg-white border border-gray-300 text-black
+            rounded shadow-md text-sm z-10 p-2
+        `;
+        
+        // Unified Delete Action
+        const deleteAction = document.createElement('div');
+        deleteAction.textContent = 'Delete';
+        deleteAction.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1 text-black';
+        deleteAction.addEventListener('click', () => {
+            if (task.todoistId) {
+                // For Todoist tasks, prompt confirmation
+                const confirmDelete = confirm('This will delete the task in Todoist. Continue?');
+                if (!confirmDelete) return;
+
+                // Delete from Todoist
+                fetch('/todoist/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ taskId: task.todoistId })
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error('Failed to delete task in Todoist');
+                    taskItem.remove();
+                    console.log(`Todoist Task "${task.title}" deleted.`);
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Failed to delete Todoist task. Please try again.');
+                });
+            } else if (isServerTask) {
+                // For regular server tasks, delete as usual
+                const confirmDelete = confirm('Are you sure you want to delete this task?');
+                if (!confirmDelete) return;
+
+                fetch(`/tasks/${task._id}`, { method: 'DELETE' })
+                    .then(res => {
+                        if (!res.ok) throw new Error('Failed to delete task');
+                        taskItem.remove();
+                        if (activeTaskId === taskId) {
+                            activeTaskId = null;
+                            stopActiveTaskInterval();
+                        }
+                        console.log(`Task "${task.title}" deleted.`);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Failed to delete task. Please try again.');
+                    });
+            } else {
+                // For local tasks, delete as usual
+                const confirmDelete = confirm('Are you sure you want to delete this task?');
+                if (!confirmDelete) return;
+
+                const localTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                const updatedTasks = localTasks.filter(t => t.id !== task.id);
+                localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+                taskItem.remove();
+                if (activeTaskId === taskId) {
+                    activeTaskId = null;
+                    stopActiveTaskInterval();
+                }
+                console.log(`Local task "${task.title}" deleted.`);
+            }
+            menu.remove();
+        });
+        menu.appendChild(deleteAction);
+
+        // Additional actions for server tasks (e.g., Rename)
+        if (isServerTask && !task.todoistId || !isServerTask) { // Exclude Todoist tasks from Rename
+            const rename = document.createElement('div');
+            rename.textContent = 'Rename';
+            rename.className = 'cursor-pointer hover:bg-gray-100 px-2 py-1 text-black';
+            rename.addEventListener('click', () => {
+              // **Modified:** Fetch the latest task title from the DOM
+              const currentTitle = taskItem.querySelector('.task-name').textContent;
+              const newName = prompt('Enter new task name:', currentTitle);
+              if(newName && newName.trim() !== '') {
+                  if (isServerTask && !task.todoistId) {
+                      // **Rename Server Task**
+                      fetch(`/tasks/${task._id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ title: newName.trim() })
+                      })
+                      .then(res => {
+                          if(!res.ok) throw new Error('Failed to rename task');
+                          return res.json();
+                      })
+                      .then(updated => {
+                          // Update UI
+                          taskItem.querySelector('.task-name').textContent = updated.task.title;
+                          console.log(`Task renamed to "${updated.task.title}".`);
+                      })
+                      .catch(err => {
+                          console.error(err);
+                          alert('Failed to rename task on server.');
+                      });
+                  } else {
+                      // **Rename Local Task**
+                      try {
+                          // Retrieve local tasks from localStorage
+                          const localTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                          
+                          // Find and update the specific task
+                          const updatedTasks = localTasks.map(t => {
+                              if (t.id === task.id) {
+                                  return { ...t, title: newName.trim() };
+                              }
+                              return t;
+                          });
+                          
+                          // Save the updated tasks back to localStorage
+                          localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+                          
+                          // Update the UI
+                          taskItem.querySelector('.task-name').textContent = newName.trim();
+                          console.log(`Local task renamed to "${newName.trim()}".`);
+                      } catch (error) {
+                          console.error('Failed to rename local task:', error);
+                          alert('Failed to rename local task.');
+                      }
+                  }
+              } else {
+                alert('Task name cannot be empty.');
+            }
+              menu.remove();
+          });          
+            menu.appendChild(rename);
+        }
+
+        // Append menu to the task item
+        taskItem.appendChild(menu);
+
+        // Remove the menu when clicking outside
+        document.addEventListener('click', function docListener(event) {
+            if (!menu.contains(event.target) && event.target !== threeDotsButton) {
+                menu.remove();
+                document.removeEventListener('click', docListener);
+            }
+        }, { once: true });
+    });
+
+    /*
+    // *** (4) Additional Buttons for Todoist Tasks ***
+    if (task.todoistId) { // Only for tasks imported from Todoist
+        // Complete Button
+        const completeButton = document.createElement('button');
+        completeButton.textContent = 'Complete';
+        completeButton.classList.add('task-complete-todoist', 'ml-2', 'px-2', 'py-1', 'bg-green-500', 'text-white', 'rounded');
+        completeButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fetch('/todoist/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ taskId: task.todoistId })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to complete task in Todoist');
+                taskItem.remove();
+            })
+            .catch(err => console.error(err));
+        });
+        taskItem.appendChild(completeButton);
+
+        // Delete from Todoist Button
+        const deleteTodoistButton = document.createElement('button');
+        deleteTodoistButton.textContent = 'Delete from Todoist';
+        deleteTodoistButton.classList.add('task-delete-todoist', 'ml-2', 'px-2', 'py-1', 'bg-red-500', 'text-white', 'rounded');
+        deleteTodoistButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if(!confirm('This will delete the task in Todoist. Continue?')) return;
+            fetch('/todoist/delete', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ taskId: task.todoistId })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to delete task in Todoist');
+                taskItem.remove();
+            })
+            .catch(err => console.error(err));
+        });
+        taskItem.appendChild(deleteTodoistButton);
+    }
+        */
+}
+
+  if (closeTodoistBtn) {
+    closeTodoistBtn.addEventListener('click', () => {
+      document.getElementById('todoist-task-modal').classList.add('hidden');
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // 3) SELECT A TASK
+  // ------------------------------------------------------------------
+
+  function handleSelectTask(taskId) {
+
+    // Check if the task is completed
+    const taskEl = document.querySelector(`[data-task-id="${taskId}"]`);
+    const isCompleted = taskEl.querySelector('.task-name').classList.contains('line-through');
+
+    if (isCompleted) {
+        alert('Cannot select a completed task.');
+        return;
+    }
+
+    // If main timer is running + we have a different active task => confirm switch
+    if (mainTimerRunning && activeTaskId && activeTaskId !== taskId) {
+      const confirmSwitch = confirm('Timer is running. Switch tasks?');
+      if (!confirmSwitch) return;
+      stopActiveTaskInterval();
+    }
+  
+    if (activeTaskId === taskId) return; // already active
+  
+    // Deactivate old
+    if (activeTaskId) {
+      handleUnselectTask(activeTaskId);
+    }
+  
+    activeTaskId = taskId;
+    // add a black left border or something to highlight
+    const selectedTask = document.querySelector(`[data-task-id="${taskId}"]`);
+    //selectedTask.classList.add('selected'); 
+    selectedTask.style.borderLeft = '4px solid black'; // or any style you want
+    selectedTask.classList.add('selected-task');
+  
+    if (mainTimerRunning) {
+      startActiveTaskInterval();
+    }
+  }
+  
+  /*
+  function handleSelectTask(taskId) {
+      // If main timer is running + we already have a different active task => confirm switch
+      if (mainTimerRunning && activeTaskId && activeTaskId !== taskId) {
+          const confirmSwitch = confirm('The timer is running. Switch to a new task?');
+          if (!confirmSwitch) {
+              return; 
+          }
+          // user said yes => stop old task’s interval
+          stopActiveTaskInterval();
+      }
+
+      // If the task is already active, do nothing. (We can rely on the unselect button for unselecting.)
+      if (activeTaskId === taskId) {
+          return;
+      }
+
+      // Deactivate all tasks
+      document.querySelectorAll('.task-item').forEach(item => {
+          item.classList.remove('active');
+          // Show "Select" button, hide "Unselect"
+          item.querySelector('.task-select').style.display = 'inline-block';
+          item.querySelector('.task-unselect').style.display = 'none';
+      });
+
+      // Activate this one
+      activeTaskId = taskId;
+      const selectedTask = document.querySelector(`[data-task-id="${taskId}"]`);
+      selectedTask.classList.add('active');
+      // Hide "Select" button, show "Unselect"
+      selectedTask.querySelector('.task-select').style.display   = 'none';
+      selectedTask.querySelector('.task-unselect').style.display = 'inline-block';
+
+      // If main timer is running, start counting for the new active task
+      if (mainTimerRunning) {
+          startActiveTaskInterval();
+      }
+  }
+  */
+
+  // ------------------------------------------------------------------
+  // 4) UNSELECT A TASK
+  // ------------------------------------------------------------------
+  function handleUnselectTask(taskId) {
+    if (activeTaskId !== taskId) return;
+  
+    // Stop counting time on this active task
+    stopActiveTaskInterval();
+  
+    // Update DB for final timeSpent
+    const oldDB = dbTimeSpent[taskId] || 0;
+    const local = localTime[taskId] || 0;
+    const newTotal = oldDB + local;
+    fetch(`/tasks/${taskId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ timeSpent: newTotal })
+    })
+    .then(res => {
+      if(!res.ok) throw new Error('Failed to update timeSpent');
+      return res.json();
+    })
+    .then(data => {
+      console.log('Unselect => updated DB timeSpent:', data.task.timeSpent);
+      updateTaskTotalTime(taskId, data.task.timeSpent);
+    })
+    .catch(console.error);
+  
+    // remove highlight
+    const taskEl = document.querySelector(`[data-task-id="${taskId}"]`);
+    if (taskEl) {
+      taskEl.classList.remove('selected-task');
+      taskEl.style.borderLeft = 'none';
+    }
+  
+    activeTaskId = null;
+  }
+
+  // Helper function to determine if a task is from the server
+  function isServerTask(taskId) {
+    return !taskId.startsWith('local-');
+  }
+
+  /*
+  function handleUnselectTask(taskId) {
+      // Only unselect if it's currently active
+      if (activeTaskId !== taskId) {
+          return;
+      }
+
+      // Stop counting time on this active task
+      stopActiveTaskInterval();
+
+      // (A) Update DB to store the final timeSpent
+      // const updatedTime = taskTimes[activeTaskId] || 0;
+
+      // 1) old total from DB
+      const oldDB = dbTimeSpent[activeTaskId] || 0;
+      // 2) localTime from this session
+      const local = localTime[activeTaskId] || 0;
+      // 3) new total = old + local
+      const newTotal = oldDB + local;
+
+      fetch(`/tasks/${activeTaskId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ timeSpent: newTotal })
+      })
+      .then(res => {
+          if (!res.ok) throw new Error('Failed to update timeSpent');
+          return res.json();
+      })
+      .then(data => {
+          console.log('Unselect => updated timeSpent in DB:', data.task.timeSpent);
+          updateTaskTotalTime(data.task._id, data.task.timeSpent);
+      })
+      .catch(err => console.error(err));
+
+      // Remove "active" styling
+      const theTask = document.querySelector(`[data-task-id="${taskId}"]`);
+      if (theTask) {
+          theTask.classList.remove('active');
+          // Switch buttons back
+          theTask.querySelector('.task-select').style.display   = 'inline-block';
+          theTask.querySelector('.task-unselect').style.display = 'none';
+      }
+
+      // Now we have no active tasks
+      activeTaskId = null;
+  }
+  */
+
+  // ------------------------------------------------------------------
+  // 5) TASK TIMER INTERVAL
+  // ------------------------------------------------------------------
+  /*
+  function startActiveTaskInterval() {
+      if (!activeTaskId) return;
+
+      // Clear any existing interval
+      stopActiveTaskInterval();
+
+      // Start a new interval for the active task
+      timerInterval = setInterval(() => {
+          if (!activeTaskId) return;
+
+          taskTimes[activeTaskId] = (taskTimes[activeTaskId] || 0) + 1;
+          const activeEl = document.querySelector(`[data-task-id="${activeTaskId}"]`);
+          if (activeEl) {
+              const totalSec  = taskTimes[activeTaskId];
+              const minutes   = Math.floor(totalSec / 60);
+              const seconds   = totalSec % 60;
+              const timeElem  = activeEl.querySelector('.task-time');
+              timeElem.textContent = `${minutes}m${seconds}s`;
+          }
+      }, 1000);
+  }
+      */
+
+  window.startActiveTaskInterval = function startActiveTaskInterval() {
+      if (!activeTaskId) return;
+    
+      stopActiveTaskInterval(); // Clear any existing interval
+    
+      timerInterval = setInterval(() => {
+        if (!activeTaskId) return;
+    
+        localTime[activeTaskId] = (localTime[activeTaskId] || 0) + 1;
+        const activeEl = document.querySelector(`[data-task-id="${activeTaskId}"]`);
+        if (activeEl) {
+          const totalSec  = localTime[activeTaskId];
+          const minutes   = Math.floor(totalSec / 60);
+          const seconds   = totalSec % 60;
+          const timeElem  = activeEl.querySelector('.task-local-time');
+          if (timeElem) {
+            timeElem.textContent = `Local: ${minutes}m${seconds}s`;
+          }
+        }
+      }, 1000);
+    }
+    
+
+    window.stopActiveTaskInterval = function stopActiveTaskInterval() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+  }
+
+/*
+  // Add event listeners for completing and deleting Todoist tasks
+function addTodoistTaskListeners(taskId) {
+  const completeButton = document.querySelector(`#complete-${taskId}`);
+  const deleteButton = document.querySelector(`#delete-${taskId}`);
+
+  if (completeButton) {
+    completeButton.addEventListener('click', () => {
+      fetch('/todoist/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to complete task');
+          return res.json();
+        })
+        .then(() => {
+          console.log('Task completed on Todoist');
+          // Optionally, remove the task from the UI
+          document.querySelector(`[data-task-id="${taskId}"]`).remove();
+        })
+        .catch((err) => console.error(err));
+    });
+  }
+
+  if (deleteButton) {
+    deleteButton.addEventListener('click', () => {
+      fetch('/todoist/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to delete task');
+          return res.json();
+        })
+        .then(() => {
+          console.log('Task deleted from Todoist');
+          // Optionally, remove the task from the UI
+          document.querySelector(`[data-task-id="${taskId}"]`).remove();
+        })
+        .catch((err) => console.error(err));
+    });
+  }
+}
+*/
+
+
+  // ------------------------------------------------------------------
+  // 6) RESPOND TO MAIN TIMER EVENTS (FROM timer.js)
+  // ------------------------------------------------------------------
+  /*
+  document.addEventListener('start-task-timer', () => {
+      mainTimerRunning = true;
+      // If a task is active, resume its interval
+      if (activeTaskId) {
+          startActiveTaskInterval();
+      }
+  });
+  */
+
+  document.addEventListener('start-task-timer', (e) => {
+      const session = e.detail.session; // Retrieve session type from event
+      if (session === 'Timer') { // Only start if it's a Timer session
+          mainTimerRunning = true;
+          // If a task is active, resume its interval
+          if (activeTaskId) {
+              startActiveTaskInterval();
+          }
+      }
+  });
+
+  async function deleteAllTasks() {
+    const loggedIn = await window.isLoggedIn();
+  
+    // Always clear local tasks from localStorage (and from the DOM)
+    localStorage.removeItem('tasks');
+    const taskList = document.getElementById('task-list');
+    taskList.innerHTML = '';
+  
+    if (!loggedIn) {
+      // If not logged in, we're done after clearing local tasks
+      alert('All local tasks have been deleted successfully (offline).');
+      return;
+    }
+  
+    // If the user is logged in, call our server route
+    try {
+      const response = await fetch('/tasks/delete-all', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete all tasks');
+      }
+  
+      // The server side only deletes non-Todoist tasks in the DB
+      // If you want to show updated tasks in the DOM, do a new fetch('/tasks')
+      // For now, we just show an alert
+      alert('All non-Todoist tasks have been deleted successfully.');
+    } catch (error) {
+      console.error('Error deleting all tasks:', error);
+      alert('Failed to delete all tasks. Please try again.');
+    }
+  }
+   
+
+
+  document.addEventListener('stop-task-timer', () => {
+      mainTimerRunning = false;
+      // Stop counting time on the active task
+      stopActiveTaskInterval();
+  
+      // If there's an active task, update the DB with the new timeSpent
+      if (activeTaskId) {
+        // 1) old total from DB
+        const oldDB = dbTimeSpent[activeTaskId] || 0;
+        // 2) localTime from this session
+        const local = localTime[activeTaskId] || 0;
+        // 3) new total = old + local
+        const newTotal = oldDB + local;
+
+        fetch(`/tasks/${activeTaskId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ timeSpent: newTotal })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to update timeSpent');
+          return res.json();
+        })
+        .then(data => {
+          console.log('Updated timeSpent in DB:', data.task.timeSpent);
+          updateTaskTotalTime(data.task._id, data.task.timeSpent);
+        })
+        .catch(err => console.error(err));
+      }
+  });
+
+  /*
+  document.addEventListener('reset-task-timer', () => {
+      mainTimerRunning = false;
+      stopActiveTaskInterval();
+      if (activeTaskId) {
+          // Reset the currently active task’s time
+          taskTimes[activeTaskId] = 0;
+          const activeTask = document.querySelector(`[data-task-id="${activeTaskId}"]`);
+          if (activeTask) {
+              activeTask.querySelector('.task-time').textContent = '0m0s';
+          }
+      }
+  });
+  */
+
+  document.addEventListener('reset-task-timer', () => {
+      mainTimerRunning = false;
+      stopActiveTaskInterval();
+    
+      if (activeTaskId) {
+        // Reset the local time to 0
+        taskTimes[activeTaskId] = 0;
+    
+        // Update the local DOM display
+        const activeTask = document.querySelector(`[data-task-id="${activeTaskId}"]`);
+        if (activeTask) {
+          activeTask.querySelector('.task-local-time').textContent = '0m0s';
+        }
+    
+        // **NEW**: PUT request to reset timeSpent on the server
+        /*
+        fetch(`/tasks/${activeTaskId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ timeSpent: 0 })
+        })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Failed to reset timeSpent in DB');
+          }
+          return res.json();
+        })
+        .then(data => {
+          console.log('Successfully reset task on server:', data.task);
+        })
+        .catch(err => {
+          console.error(err);
+        });
+        */
+      }
+    });
+
+  // ------------------------------------------------------------------
+  // 7) OPTIONAL: DRAG & DROP SORTING
+  // ------------------------------------------------------------------
+  /*
+  new Sortable(taskList, {
+      animation: 150,
+      onEnd: () => {
+          console.log('Tasks reordered');
+      },
+  });
+  */
+
+    /*
+    document.getElementById('close-modal-btn').addEventListener('click', () => {
+      document.getElementById('todoist-task-modal').style.display = 'none';
+  });
+
+  // Optional: Ensure the modal can also close when clicking outside
+  window.addEventListener('click', (event) => {
+      const modal = document.getElementById('todoist-task-modal');
+      if (event.target === modal) {
+          modal.style.display = 'none';
+      }
+  });
+  */
+
+  window.updateTaskTotalTime = function updateTaskTotalTime(taskId, totalSeconds) {
+    const taskEl = document.querySelector(`[data-task-id="${taskId}"]`);
+    if (!taskEl) return;
+
+    const totalTimeEl = taskEl.querySelector('.task-total-time');
+    if (!totalTimeEl) return;
+
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    totalTimeEl.textContent = `Total: ${minutes}m${seconds}s`;
+
+    // Determine if the task is from server or local
+    const isServerTask = !taskId.startsWith('local-');
+
+    if (isServerTask) {
+        // Update on server
+        fetch(`/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ timeSpent: totalSeconds })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to update timeSpent');
+            return res.json();
+        })
+        .then(data => {
+            console.log('Updated timeSpent in DB:', data.task.timeSpent);
+        })
+        .catch(err => console.error(err));
+    } else {
+        // Update in localStorage
+        const localTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        const updatedTasks = localTasks.map(t => {
+            if (t.id === taskId) {
+                return { ...t, timeSpent: totalSeconds };
+            }
+            return t;
+        });
+        localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+    }
+  };
+});
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Specifies the document type as HTML5 and sets the language to English -->
+    <meta charset="UTF-8">
+    <!-- Sets the character encoding to UTF-8 for broad language support -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Ensures the page is responsive and scales well on all devices -->
+    <title>Study Timer</title>
+    <!-- Sets the title of the webpage -->
+    
+    <!-- Tailwind + FontAwesome + SortableJS -->
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />  
+
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+
+    <!-- Header / Nav -->
+    <header class="bg-gray-800 py-4 shadow">
+        <div class="container mx-auto flex items-center justify-between px-4">
+            <!-- Left side: App name -->
+            <h1 class="text-2xl font-bold">Focus Flow</h1>
+    
+            <!-- Right side: Buttons for Stats, Settings, Login/Logout -->
+            <div class="flex items-center space-x-4">
+                <button id="stats-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
+                    Stats
+                </button>
+                <button id="settings-btn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">
+                    Settings
+                </button>
+                <a id="login-link" href="login.html" 
+                   class="px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded">
+                    Login
+                </a>
+                <button id="logout-button" 
+                        class="px-3 py-2 bg-red-500 hover:bg-red-600 rounded hidden">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>    
+  
+    <!-- Main content with Timer + Tasks -->
+    <main class="flex-1 container mx-auto px-4 py-8">
+      
+      <!-- Timer container -->
+      <div class="mx-auto mb-8 p-6 bg-gray-800 rounded shadow max-w-xl text-center">
+        <h2 id="timer-title" class="text-xl font-bold mb-4">Timer</h2>
+  
+        <!-- Circular Timer SVG -->
+        <div class="w-64 h-64 mx-auto relative mb-4">
+          <svg id="timer-circle-svg" class="absolute inset-0" viewBox="0 0 100 100">
+            <!-- Full circle background -->
+            <circle cx="50" cy="50" r="45" stroke="#D97706" stroke-width="10" fill="none" />
+            <!-- Elapsed time circle (Purple) -->
+            <circle id="elapsed-circle" 
+                    cx="50" cy="50" r="45" 
+                    stroke="#7C3AED" stroke-width="10" 
+                    fill="none" 
+                    stroke-dasharray="282.743" 
+                    stroke-dashoffset="282.743" 
+                    stroke-linecap="round" 
+                    transform="rotate(-90 50 50)"/>
+          </svg>
+          <!-- Time display in the center -->
+          <div id="timer-display" class="absolute inset-0 flex items-center justify-center text-4xl">
+            25:00
+          </div>
+        </div>
+  
+        <!-- Timer buttons -->
+        <div class="flex justify-center space-x-4 mb-4">
+          <button id="reset-btn" class="text-xl hover:text-purple-400">
+            <i class="fas fa-redo"></i>
+          </button>
+          <button id="start-pause-btn" class="text-xl hover:text-purple-400">
+            <i class="fas fa-play"></i>
+          </button>
+          <button id="skip-btn" class="text-xl hover:text-purple-400">
+            <i class="fas fa-forward"></i>
+          </button>
+        </div>
+  
+        <!-- Session info -->
+        <div id="session-info" class="bg-gray-700 inline-block px-3 py-1 rounded">
+          1 of 4 Sessions
+        </div>
+      </div>
+  
+      <!-- Tasks Container -->
+      <div class="bg-gray-800 p-4 rounded-t-lg w-full max-w-xl mx-auto">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-white text-lg font-semibold">Tasks</h2>
+            <div class="relative">
+                <button 
+                id="tasks-menu-trigger"
+                class="three-dots-menu-btn w-8 h-8 flex items-center justify-center bg-gray-700 rounded hover:bg-gray-600 focus:outline-none transition-colors duration-200"
+                aria-label="Task options"
+            >
+                <i class="fas fa-ellipsis-v text-white" aria-hidden="true"></i>
+            </button>            
+            </div>
+          </div>          
+        <hr class="border-gray-500 mb-4">
+  
+        <!-- The container that holds the sortable tasks -->
+        <div id="task-list" class="space-y-2 w-full"></div>
+  
+        <!-- The "Add Task" button/section -->
+        <div class="relative w-full mt-4">
+          <div id="add-task-btn" 
+              class="bg-purple-700 p-3 rounded-lg border-dashed border-2 border-purple-500 
+                     flex justify-center items-center cursor-pointer">
+            <i class="fas fa-plus-circle text-white mr-2"></i>
+            <span class="text-white font-semibold">Add Task</span>
+          </div>
+          
+          <!-- Hidden popup for creating a new task -->
+          <div id="add-task-popup" class="hidden absolute w-full bg-white p-4 rounded-lg shadow-md mt-2">
+
+            <!-- Project Name Input -->
+            <div class="mb-4">
+              <label for="new-task-project-input" class="block text-gray-700">Project Name</label>
+              <input type="text" id="new-task-project-input" placeholder="Enter project name" class="w-full px-3 py-2 border rounded">
+            </div>
+            <input id="new-task-input" 
+                   type="text" 
+                   class="w-full p-2 border text-black border-gray-300 rounded mb-2" 
+                   placeholder="Enter task">
+            <div class="flex justify-end space-x-2">
+              <button id="cancel-btn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded">Cancel</button>
+              <button id="add-task-confirm-btn" class="bg-purple-600 text-white px-4 py-2 rounded">
+                Add Task
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Replace your old todoist-task-modal (the one with fixed inset-0) with this inline snippet. -->
+      <div 
+      id="todoist-task-modal"
+      class="hidden bg-white text-black rounded shadow-md border 
+            w-full max-w-md mx-auto mt-8 p-4"
+      >
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-4 border-b pb-2">
+        <h3 class="text-xl font-bold">Select Tasks to Import</h3>
+        <button 
+          id="close-todoist-modal" 
+          class="text-2xl font-bold"
+        >&times;</button>
+      </div>
+
+      <!-- Middle content, grows as needed. We'll insert tasks here in tasks.js -->
+      <div id="todoist-task-list">
+        <!-- If no tasks come back, we can insert “No tasks available to be imported” dynamically. -->
+      </div>
+
+      <!-- Footer with "Import" and "Cancel" -->
+      <div class="border-t pt-2 mt-4 flex justify-end space-x-2">
+        <button 
+          id="confirm-import"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Import Selected Tasks
+        </button>
+        <button
+          id="cancel-import"
+          class="px-4 py-2 border rounded"
+        >
+          Cancel
+        </button>
+      </div>
+      </div>
+
+
+      <!-- Settings Modal -->
+      <div 
+        id="settings-modal" 
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      >
+        <div class="bg-white text-black p-6 rounded shadow-md max-w-md w-full relative">
+            <!-- Close button -->
+            <button id="close-settings" class="absolute top-2 right-2 text-2xl text-black">&times;</button>
+
+            
+            
+            <h2 class="text-xl font-bold mb-4">Settings</h2>
+
+            <!-- WORK DURATION -->
+            <label for="work-duration-slider" class="block mb-1 font-semibold">
+              Work Duration (minutes)
+            </label>
+            <input
+              id="work-duration-slider"
+              type="range"
+              min="5" max="60" step="1" value="25"
+              class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
+            />
+            <span id="work-duration-value" class="text-black text-sm">25 min</span>
+
+            <!-- SHORT BREAK -->
+            <label for="short-break-slider" class="block mb-1 font-semibold mt-4">
+              Short Break (minutes)
+            </label>
+            <input
+              id="short-break-slider"
+              type="range"
+              min="1" max="30" step="1" value="5"
+              class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
+            />
+            <span id="short-break-value" class="text-black text-sm">5 min</span>
+
+            <!-- LONG BREAK -->
+            <label for="long-break-slider" class="block mb-1 font-semibold mt-4">
+              Long Break (minutes)
+            </label>
+            <input
+              id="long-break-slider"
+              type="range"
+              min="1" max="60" step="1" value="15"
+              class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
+            />
+            <span id="long-break-value" class="text-black text-sm">15 min</span>
+
+            <!-- SESSIONS -->
+            <label for="sessions-slider" class="block mb-1 font-semibold mt-4">
+              Sessions before Long Break
+            </label>
+            <input
+              id="sessions-slider"
+              type="range"
+              min="1" max="10" step="1" value="4"
+              class="w-full appearance-none h-2 bg-gray-300 rounded outline-none mb-2"
+            />
+            <span id="sessions-value" class="text-black text-sm">4</span>
+
+            <!-- AUTOSTART TOGGLE -->
+            <div class="flex items-center justify-between mb-4 mt-4">
+              <label class="mr-2 font-semibold">Autostart</label>
+              <!-- Make sure the container is position:relative so the "after:" styling works -->
+              <label class="inline-flex items-center cursor-pointer relative">
+                <input type="checkbox" id="auto-start-all" class="sr-only peer" />
+                <div 
+                  class="w-11 h-6 bg-gray-200 rounded-full 
+                        peer peer-checked:bg-purple-600
+                        peer-focus:outline-none
+                        relative
+                        after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                        after:bg-white after:border-gray-300 after:border after:rounded-full
+                        after:h-5 after:w-5 after:transition-all
+                        peer-checked:after:translate-x-5 peer-checked:after:border-white">
+                </div>
+              </label>
+            </div>
+
+            <!-- Save / Reset Buttons -->
+            <form id="settings-form" class="mt-4 flex space-x-2 justify-end">
+              <!-- Black background, white text, hover => slightly darker gray -->
+              <button type="submit" 
+                      class="bg-black text-white px-4 py-2 rounded 
+                             hover:bg-gray-700 transition-colors">
+                Save
+              </button>
+              <!-- Keep border-only, but make sure it’s black text, 
+                   and hover => gray background. -->
+              <button type="button" id="reset-default-btn" 
+                      class="px-4 py-2 border rounded border-black text-black 
+                             hover:bg-gray-200 transition-colors">
+                Reset
+              </button>
+            </form>            
+        </div>
+      </div>
+
+      <!-- ********** UPDATED Stats Modal ********** -->
+      <div
+      id="stats-modal-2" 
+      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      >
+      <!-- 
+        max-w-xl = “limit the container’s width to ~36rem (about 576px)”
+        max-h-[80vh] = “max height at 80% of viewport”
+        overflow-y-auto = “scroll if content is taller than 80% of viewport”
+      -->
+      <div class="bg-white text-black p-6 rounded shadow-md w-full max-w-xl max-h-[80vh] overflow-y-auto relative">
+        <!-- Close button at top right -->
+
+        <div class="flex items-center justify-between mb-4 border-b pb-2">
+          <h2 class="text-2xl font-bold">Stats</h2>
+          <button id="close-stats" class="absolute top-2 right-2 text-2xl text-black">&times;</button>
+        </div>
+
+        <h3 class="text-2xl mb-4 text-center">Weekly Stats</h2>
+        <!-- Day-by-Day Usage Bar Chart -->
+        <div class="mb-8">
+          <h3 class="text-xl mb-2">Focus Hours (Past 7 Days)</h3>
+          <!-- 
+            If you want the chart even smaller, wrap it in a 
+            container with fixed width/height (like w-64 h-32).
+          -->
+          <div class="mx-auto" style="max-width: 400px;">
+            <canvas id="dayChart" width="400" height="200"></canvas>
+          </div>
+        </div>
+
+        <hr class="my-4 border-gray-300">
+        <h3 class="text-xl mb-2 text-center">Top Tasks</h3>
+        <!-- Top Tasks Pie Chart -->
+        <div class="mb-8">
+          <div class="mx-auto" style="max-width: 400px;">
+            <canvas id="taskChart" width="400" height="200"></canvas>
+          </div>
+        </div>
+
+        <!-- Place to show ALL tasks used -->
+        <div id="weekly-tasks" class="mb-4">
+          <!-- The table or “No tasks found” message is inserted by stats.js -->
+        </div>
+      </div>
+      </div>
+      <!-- ************************************* -->
+
+    </main>
+  
+    <footer class="bg-gray-800 py-4 text-center text-sm text-gray-400">
+      &copy; 2025 Focus Flow
+    </footer>
+  
+    <!-- Scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/tasks.js"></script>
+    <script src="js/timer.js"></script>
+    <script type="module" src="js/settings.js"></script>
+
+    <!-- Load Chart.js (for stats) + your stats.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/stats.js"></script>
+
+    <!-- Script to open/close the Stats modal -->
+    <!-- Script to open/close the Stats modal -->
+    <script>
+      const statsBtn2 = document.getElementById('stats-btn');
+      const statsModal2 = document.getElementById('stats-modal-2');
+      const closeStatsBtn = document.getElementById('close-stats');
+
+      // When user hovers over the Stats button:
+      statsBtn2.addEventListener('mouseenter', async () => {
+        const isLoggedIn = await window.isLoggedIn();
+        if (!isLoggedIn) {
+          // Show a tooltip on hover
+          statsBtn2.setAttribute('title', 'Please log in to view your stats');
+        } else {
+          // Remove any old tooltip
+          statsBtn2.removeAttribute('title');
+        }
+      });
+
+      // When user actually clicks the Stats button:
+      statsBtn2.addEventListener('click', async () => {
+        const isLoggedIn = await window.isLoggedIn();
+        if (!isLoggedIn) {
+          // Just alert (or do nothing) instead of opening the modal
+          alert('Please log in to access stats');
+          return;
+        }
+
+        // If logged in, open the modal and load stats
+        statsModal2.classList.remove('hidden');
+        if (window.loadWeeklyStats) {
+          window.loadWeeklyStats();
+        }
+      });
+
+      // Close button on the modal
+      closeStatsBtn.addEventListener('click', () => {
+        statsModal2.classList.add('hidden');
+      });
+    </script>
+
+</body>
+</html>

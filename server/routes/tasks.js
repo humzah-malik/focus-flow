@@ -11,11 +11,13 @@ function ensureAuthenticated(req, res, next) {
 }
 
 // CREATE a new task
+// CREATE a new task
 router.post('/', ensureAuthenticated, async (req, res) => {
   try {
-    // We expect { "title": "Study math" } in the request body
+    // Expect { "title": "Study math", "projectName": "General" } in the request body
     const newTask = new Task({
       title: req.body.title,
+      projectName: req.body.projectName || 'General', // Set default if not provided
       user: req.user._id  // The logged-in user
     });
     await newTask.save();
