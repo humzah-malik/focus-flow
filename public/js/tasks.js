@@ -147,7 +147,7 @@ cancelBtn.addEventListener('click', () => {
         console.log('Created task:', data.task);
         renderTask(data.task, true); // 'true' for server task
         newTaskInput.value = '';
-        newTaskProjectInput.value = ''; // Clear project input
+        //newTaskProjectInput.value = ''; // Clear project input
         addTaskPopup.classList.add('hidden');
       })
       .catch(err => {
