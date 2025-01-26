@@ -50,7 +50,6 @@ function updateCircles() {
     elapsedCircle.style.strokeDashoffset = elapsedOffset;
 }
 
-
 // Call updateCircles initially to set the correct state
 updateCircles();
 
@@ -75,19 +74,6 @@ function attachEventListeners() {
     document.getElementById('reset-btn').addEventListener('click', resetTimer);
     // Event listener for skip button
     document.getElementById('skip-btn').addEventListener('click', skipToBreak);
-}
-
-// Function to check if user is logged in
-async function isLoggedIn() {
-    try {
-        const res = await fetch('/check-session', { method: 'GET', credentials: 'include' });
-        if (!res.ok) throw new Error('Failed to check session');
-        const data = await res.json();
-        return data.loggedIn;
-    } catch (err) {
-        console.error('Error checking session:', err);
-        return false;
-    }
 }
 
 // Function to load settings from server
@@ -154,7 +140,7 @@ function loadSettingsFromLocalStorage() {
 
 // Function to load settings based on login status
 async function loadSettings() {
-    const loggedIn = await isLoggedIn();
+    const loggedIn = await window.isLoggedIn();
     if (loggedIn) {
         await loadSettingsFromServer();
     } else {
@@ -177,7 +163,7 @@ async function startTimer() {
     isRunning = true;
 
     // CREATE a new FocusSession if the user is logged in
-    const loggedIn = await isLoggedIn();
+    const loggedIn = await window.isLoggedIn();
     if (loggedIn && currentSession === 'Timer') {
         try {
         // If we have an activeTaskId from tasks.js, we can pass it

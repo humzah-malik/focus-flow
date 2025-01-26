@@ -22,12 +22,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             // User is logged in
             loginLink.style.display = "none";
             logoutButton.classList.remove("hidden");
-            window.isLoggedIn = true;
         } else {
             // User is not logged in
             loginLink.style.display = "inline-block";
             logoutButton.classList.add("hidden");
-            window.isLoggedIn = false;
         }
     } catch (error) {
         console.error('Error checking login status:', error);
@@ -175,3 +173,18 @@ function showLogoutSuccessPopup() {
         }, 500);
     }, 3000);
 }
+
+console.log('auth.js loaded! About to define window.isLoggedIn...');
+window.isLoggedIn = async function() {
+  console.log('window.isLoggedIn called.'); // Optional
+  try {
+    const response = await fetch('/check-session');
+    if (!response.ok) return false;
+    const data = await response.json();
+    return data.loggedIn === true;
+  } catch (error) {
+    console.error('Error checking login status:', error);
+    return false;
+  }
+};
+console.log('auth.js finished defining window.isLoggedIn:', window.isLoggedIn);

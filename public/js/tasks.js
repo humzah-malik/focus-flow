@@ -41,20 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1) LOAD TASKS BASED ON LOGIN STATUS
     // ---------------------------------------------------------
 
-    // 1) Define the helper FIRST
-    async function isLoggedIn() {
-      try {
-        const response = await fetch('/check-session');
-        if (!response.ok) return false;
-        const data = await response.json();
-        return data.loggedIn === true;
-      } catch (error) {
-        console.error('Error checking login status:', error);
-        return false;
-      }
-    }
-
-    const loggedIn = await isLoggedIn();
+    const loggedIn = await window.isLoggedIn();
 
     if (loggedIn) {
         // Fetch tasks from the server
@@ -140,7 +127,7 @@ cancelBtn.addEventListener('click', () => {
           return;
       }
 
-      const loggedIn = await isLoggedIn();
+      const loggedIn = await window.isLoggedIn();
 
       if (loggedIn) {
           // Create task via server
@@ -1234,7 +1221,7 @@ function addTodoistTaskListeners(taskId) {
   });
 
   async function deleteAllTasks() {
-    const loggedIn = await isLoggedIn();
+    const loggedIn = await window.isLoggedIn();
   
     // Always clear local tasks from localStorage (and from the DOM)
     localStorage.removeItem('tasks');
