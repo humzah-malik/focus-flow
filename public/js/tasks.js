@@ -537,10 +537,6 @@ function importTodoist() {
     </span>
   </div>
   <div class="flex items-center space-x-3">
-    <span class="task-local-time text-blue-600 text-sm">Local: 0m0s</span>
-    <span class="task-total-time text-gray-500 text-sm">
-      Total: ${dbMin}m${dbSec}s
-    </span>
     <!-- Three Dots Menu Trigger Wrapped in a Button -->
     <button 
       class="three-dots-menu-btn w-8 h-8 flex items-center justify-center bg-gray-700 rounded hover:bg-gray-600 focus:outline-none transition-colors duration-200"
@@ -552,6 +548,8 @@ function importTodoist() {
 `;
 
     // Append to the #task-list
+    console.log(`Rendering task with ID: ${taskId}`);
+    taskItem.setAttribute('data-task-id', taskId);
     taskList.appendChild(taskItem);
 
     // *** (1) Click to toggle selection/unselection ***
@@ -919,6 +917,10 @@ function importTodoist() {
 
     // Check if the task is completed
     const taskEl = document.querySelector(`[data-task-id="${taskId}"]`);
+    if (!taskEl) {
+      console.error(`Task with ID ${taskId} not found. Check if it was rendered or removed.`);
+      return;
+    }
     const isCompleted = taskEl.querySelector('.task-name').classList.contains('line-through');
 
     if (isCompleted) {

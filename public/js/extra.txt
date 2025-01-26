@@ -1868,3 +1868,8 @@ function addTodoistTaskListeners(taskId) {
 
 </body>
 </html>
+
+<span class="task-local-time text-blue-600 text-sm">Local: 0m0s</span>
+    <span class="task-total-time text-gray-500 text-sm">
+      Total: ${dbMin}m${dbSec}s
+    </span>
