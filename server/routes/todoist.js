@@ -36,11 +36,14 @@ router.get('/auth/todoist/callback', ensureAuthenticated, async (req, res) => {
     const accessToken = response.data.access_token;
     console.log('Received Todoist access token:', accessToken);
 
+        // Save token to session
     req.user.todoistToken = accessToken;
+    req.session.passport.user.todoistToken = accessToken; // Ensure it's saved in session
 
-    console.log('Saving user with Todoist token:', req.user);
+    // Save to database
+    await User.findByIdAndUpdate(req.user.id, { todoistToken: accessToken });
 
-    await req.user.save();
+    console.log('Token saved successfully for user:', req.user.id);
 
     console.log('Token saved successfully for user:', req.user);
 
@@ -55,8 +58,11 @@ router.get('/auth/todoist/callback', ensureAuthenticated, async (req, res) => {
 router.get('/todoist/tasks', ensureAuthenticated, async (req, res) => {
   console.log('Fetching Todoist tasks for user:', req.user);
   console.log('User Todoist Token:', req.user.todoistToken);
+
+  // If there's no token, redirect the user to connect their Todoist account
   if (!req.user.todoistToken) {
-    return res.status(400).json({ message: 'User is not connected to Todoist.' });
+    console.log('No Todoist token found, redirecting user to /todoist/connect');
+    return res.redirect('/todoist/connect');
   }
 
   try {
