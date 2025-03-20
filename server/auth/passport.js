@@ -16,6 +16,46 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
+
+passport.use('todoist', new OAuth2Strategy(
+  {
+    authorizationURL: 'https://todoist.com/oauth/authorize',
+    tokenURL: 'https://todoist.com/oauth/access_token',
+    clientID: process.env.TODOIST_CLIENT_ID,
+    clientSecret: process.env.TODOIST_CLIENT_SECRET,
+    callbackURL: process.env.TODOIST_REDIRECT_URI,
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      const response = await axios.get('https://api.todoist.com/sync/v9/sync', {
+        params: {
+          sync_token: '*',
+          resource_types: '["user"]',
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const userInfo = response.data.user;
+
+      const user = {
+        accessToken,
+        refreshToken,
+        id: userInfo.id,
+        name: userInfo.full_name,
+        email: userInfo.email,
+      };
+
+      return done(null, user);
+    } catch (error) {
+      console.error('Error fetching Todoist user info:', error);
+      return done(error);
+    }
+  }
+));
+
+
 passport.use(
   new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
     try {
