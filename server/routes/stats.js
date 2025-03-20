@@ -71,12 +71,6 @@ router.put('/focus-session/:id', ensureAuthenticated, async (req, res) => {
 
 /**
  * GET /stats/weekly
- * Returns day-by-day usage (past 7 days) plus "top tasks" in that same time window
- */
-// server/routes/stats.js
-
-/**
- * GET /stats/weekly
  * Returns:
  *   - dailyData[]: day-by-day usage (past 7 days)
  *   - topTasks[]: up to 5 tasks with the most usage
@@ -87,7 +81,7 @@ router.get('/weekly', ensureAuthenticated, async (req, res) => {
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   
-      // 1) Day-by-day aggregator
+      // 1) Day-by-day aggregator to show accurate time spent for each specific day
       const sessions = await FocusSession.aggregate([
         {
           $match: {
@@ -119,7 +113,7 @@ router.get('/weekly', ensureAuthenticated, async (req, res) => {
       // Now transform aggregator data => a list of day/duration
       const dailyData = sessions.map(d => ({
         date: d._id,               // "YYYY-MM-DD"
-        totalDuration: d.totalDuration // sum of durations (seconds) for that day
+        totalDuration: d.totalDuration // sum of durations (in seconds) for that day
       }));
   
       // 2) Top 5 Tasks aggregator
@@ -176,7 +170,7 @@ router.get('/weekly', ensureAuthenticated, async (req, res) => {
         { $sort: { totalDuration: -1 } }
       ]);
   
-      // Convert aggregator => array of { title, duration }
+      // Convert aggregator into an array of { title, duration }
       const tasksUsed = [];
       for (const t of tasksUsedAgg) {
         if (!t._id) {
