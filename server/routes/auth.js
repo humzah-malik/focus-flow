@@ -3,7 +3,7 @@ const router = express.Router();
 const User = require('../models/user'); // User model
 const bcrypt = require('bcrypt');
 const path = require('path');
-const passport = require('passport');  // <--- Add this line
+const passport = require('passport');
 
 // User signup route
 router.post('/signup', async (req, res) => {
@@ -60,13 +60,13 @@ router.post('/login', async (req, res) => {
 
 router.post('/login',
   passport.authenticate('local', {
-    successRedirect: '/index.html', // or wherever
+    successRedirect: '/index.html', 
     failureRedirect: '/login.html',
     failureFlash: true
   })
 );
 
-// Add the following POST /logout route
+// POST/logout route
 router.post('/logout', (req, res) => {
   req.logout(function (err) {
     if (err) {
@@ -74,7 +74,7 @@ router.post('/logout', (req, res) => {
       return res.status(500).send('Error logging out.');
     }
 
-    // Destroy the entire session
+    // Destroys the entire session
     req.session.destroy((err) => {
       if (err) {
         console.error('Error destroying session:', err);
@@ -120,7 +120,7 @@ router.get('/check-session', (req, res) => {
 
 // Route to serve the signup page
 router.get('/signup', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../public/signup.html')); // Adjust the path if necessary
+  res.sendFile(path.join(__dirname, '../../public/signup.html'));
 });
 
 module.exports = router;
