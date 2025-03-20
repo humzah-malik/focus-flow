@@ -9,11 +9,10 @@ const taskSchema = new mongoose.Schema({
   title: {type: String, required: true},
   completed: {type: Boolean, default: false},
   timeSpent: {type: Number, default: 0},  
-  dueDate: { type: Date }, // Optional: Add due date for tasks
-  priority: { type: Number, default: 4 }, // Optional: Todoist tasks have priority levels 1-4
+  dueDate: { type: Date }, // Optional
+  priority: { type: Number, default: 4 }, // Optional; Todoist tasks have priority levels 1-4
   todoistId: { type: Number, unique: true, sparse: true },
   projectName: { type: String, default: '' }
-  // Add fields like timeSpent if you want to store that, etc.
 });
 
 module.exports = mongoose.model('Task', taskSchema);
