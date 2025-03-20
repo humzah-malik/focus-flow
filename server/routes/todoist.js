@@ -44,8 +44,6 @@ router.get('/auth/todoist/callback', ensureAuthenticated, async (req, res) => {
 
     console.log('Token saved successfully for user:', req.user);
 
-    //res.send('Todoist connected successfully! <a href="/index.html">Go back</a>');
-    // near the end of your GET /auth/todoist/callback 
     res.redirect('/index.html');
   } catch (err) {
     console.error('Error exchanging code for token:', err);
