@@ -11,7 +11,6 @@ function ensureAuthenticated(req, res, next) {
 }
 
 // CREATE a new task
-// CREATE a new task
 router.post('/', ensureAuthenticated, async (req, res) => {
   try {
     // Expect { "title": "Study math", "projectName": "General" } in the request body
@@ -71,13 +70,12 @@ router.delete('/:taskId', ensureAuthenticated, async (req, res) => {
 });
 
 // DELETE ALL tasks that do NOT have a todoistId (and belong to this user)
-// Near the bottom, before module.exports = router;
 router.delete('/delete-all', ensureAuthenticated, async (req, res) => {
   try {
     // Remove all tasks for this user *without* a todoistId
     const result = await Task.deleteMany({
       user: req.user._id,
-      // If the field is *entirely missing*, or if it’s set to null
+      // If the field is entirely missing, or if it’s set to null
       $or: [
         { todoistId: { $exists: false } },
         { todoistId: null }
