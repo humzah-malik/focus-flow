@@ -340,7 +340,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // **Add Event Listeners for Opening and Closing the Settings Modal**
 
     // Get references to the settings button, close button, and modal
     const settingsBtn = document.getElementById('settings-btn');
@@ -366,16 +365,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 });
-
-// **Remove or Comment Out the Following Block**
-/*
-document.getElementById('settings-btn').addEventListener('click', async () => {
-    document.getElementById('settings-modal').classList.remove('hidden');
-    await loadSettingsBasedOnLogin();
-});
-document.getElementById('close-settings').addEventListener('click', () => {
-    document.getElementById('settings-modal').classList.add('hidden');
-});
-
-window.loadSettingsBasedOnLogin = loadSettingsBasedOnLogin;
-*/
