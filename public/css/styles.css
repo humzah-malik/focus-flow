@@ -711,7 +711,7 @@ header a:hover {
     color: #000; /* Black text when hovered */
 }
 
-/* Make "Focus Flow" appear larger. Adjust as you like. */
+/* Make "Focus Flow" appear larger. */
 .focus-flow-title {
     font-size: 36px;  /* Increase title size */
     margin-bottom: 20px;
