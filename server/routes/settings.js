@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/user'); // Adjust the path if necessary
+const User = require('../models/user');
 
 // Middleware to ensure user is authenticated
 function ensureAuthenticated(req, res, next) {
@@ -34,8 +34,6 @@ router.put('/', ensureAuthenticated, async (req, res) => {
             autoStartBreaks,
             autoStartTimer 
         } = req.body;
-
-        // Optional: Validate input values here
 
         const updatedSettings = {};
         if (workDuration !== undefined) updatedSettings['settings.workDuration'] = workDuration;
