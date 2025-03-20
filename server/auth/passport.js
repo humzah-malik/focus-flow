@@ -75,19 +75,23 @@ passport.use(
   })
 );
 
-// Serialize user (save only accessToken for simplicity)
+// Serialize user
 passport.serializeUser((user, done) => {
-  done(null, user.id);
+  done(null, { id: user.id, todoistToken: user.todoistToken }); // Store todoistToken
 });
 
-passport.deserializeUser(async (id, done) => {
+//De-Serialize user
+passport.deserializeUser(async (obj, done) => {
   try {
-    // Use await on the query
-    const user = await User.findById(id).exec(); 
+    const user = await User.findById(obj.id).exec();
+    if (!user) return done(null, false);
+    
+    user.todoistToken = obj.todoistToken; // Restore Todoist token in session
     return done(null, user);
   } catch (err) {
     return done(err);
   }
 });
+
 
 module.exports = passport;
